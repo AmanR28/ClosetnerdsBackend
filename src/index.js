@@ -5,6 +5,7 @@ const {port} = require('./config')
 
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/', (req, res) => res.send('hi'));
 app.use('/profile', profile);
 
 app.listen(port, () => {
