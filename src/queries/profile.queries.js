@@ -1,5 +1,11 @@
 module.exports = {
-    CREATE_PROFILE: 'INSERT INTO profiles (email, name, phoneNo, gender) VALUES (?, ?, ?, ?)',
+    SHOW_PROFILE: `
+        SELECT * FROM profiles WHERE email = ?
+    `,
+    CREATE_PROFILE: `
+        INSERT INTO profiles (email, name, phone, gender)
+        VALUES (?, ?, ?, ?)`,
+
     UPDATE_PROFILE_MEASURE: `
         UPDATE profiles 
         SET bust = ?, waist = ?, hip = ?, length = ?

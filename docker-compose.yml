@@ -1,0 +1,16 @@
+version: '3.6'
+
+services:
+  dbcloset:
+    container_name: mariadb
+    image: mariadb:10.6
+    restart: on-failure
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
+    ports:
+     - 3305:3306
+    volumes:
+     - db_maria:/var/lib/mysql
+    
+volumes:
+  db_maria:

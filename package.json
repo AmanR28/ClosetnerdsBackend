@@ -1,19 +1,21 @@
 {
-	"name": "closet_nerd-api",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
-	"scripts": {
-		"start": "node src/",
-		"start:dev": "nodemon src/"
-	},
-	"author": "",
-	"license": "ISC",
-	"dependencies": {
-		"express": "^4.18.2",
-		"mysql": "^2.18.1"
-	},
-	"devDependencies": {
-		"nodemon": "^2.0.20"
-	}
+  "name": "closet_nerd-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/",
+    "start:dev": "nodemon src/",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mariadb": "^3.0.2",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
 }

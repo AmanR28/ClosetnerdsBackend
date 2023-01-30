@@ -3,39 +3,23 @@ DROP TABLE IF EXISTS profiles;
 CREATE TABLE profiles (
     id      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     
-    email   VARCHAR(255) NOT NULL UNIQUE,
+    email   VARCHAR(255) NOT NULL,
     name    VARCHAR(255) ,
-    phoneNo INT,
-    gender  ENUM('male', 'female', '') DEFAULT '',
+    phone   INT,
+    gender  ENUM('male', 'female'),
 
-    bust INT,
-    waist INT,
-    hip INT,
-    length INT,
+    measures JSON,
+    wears JSON,
+    subs JSON,
+    occasions JSON,
+    prices JSON,
+    color JSON,
 
-    wear JSON,
-    sub JSON,
-
-    occasion1 TEXT,
-    occasion2 TEXT,
-    occasion3 TEXT,
-
-    price1 TEXT,
-    price2 TEXT,
-    price3 TEXT,
-
-    color1 TEXT,
-    color2 TEXT,
-    color3 TEXT,
-
-    type TEXT,
-
+    type ENUM('Triangle','Inverted','Hourglass','Rectangle'),
+    
     brands TEXT,
-
     celebrity TEXT,
-
     skin TEXT,
-
     picture TEXT
 );
 
