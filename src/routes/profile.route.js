@@ -3,130 +3,237 @@ const router = express.Router();
 const db = require('../db');
 const {profileQueries} = require('../queries')
 
-router.get('/', (req, res) => {
-    const sql = profileQueries.SHOW_PROFILE;
-    db.query(sql, [req.body.email], (err, results) => {
-      if(err) return res.status(500).send(err);
-      res.send(JSON.stringify(results[0]));
-    })
+router.get('/', async (req, res) => {
+    if (!req.body.email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        const sql = profileQueries.SHOW_PROFILE;
+        const results = await db.query(sql, req.body.email);
+        res.status(200).json(results);
+    } catch (error) {
+        res.status(400).send(error.message)
+    }
 })
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const email = req.body.email || '';
     const name = req.body.name || '';
     const phone = req.body.phone || 0;
     const gender = req.body.gender || 'male';
-    
+
     const sql = profileQueries.CREATE_PROFILE;
     const values = [email, name, phone, gender];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.status(200).send('User information saved successfully');
-            console.log('done')
-        }
-    });
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
 });
 
-
-
-
-
-router.post('/measures', (req, res) => {
+router.post('/measures', async(req, res) => {
     const email = req.body.email;
-    const bust = req.body.bust || 0;
-    const waist = req.body.waist || 0;
-    const hip = req.body.hip || 0;
-    const length = req.body.length || 0;
+    const measures = {
+        bust : req.body.bust || 0, 
+        waist : req.body.waist || 0, 
+        hip : req.body.hip || 0, 
+        length : req.body.length || 0
+    }
 
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
     const sql = profileQueries.UPDATE_PROFILE_MEASURE;
-    const values = [bust, waist, hip, length, email];
+    const values = [measures, email];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.send('Measures information saved successfully');
-        }
-    });
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        res.status(400).send(error.message)
+    }
 });
 
-router.post('/wears', (req, res) => {
+router.post('/wears', async(req, res) => {
     const email = req.body.email;
-    const wear = req.body.wear;
-    const sub = req.body.sub;
+    const wears = req.body.wears || {};
+    const subs = req.body.subs || {};
 
-
+    
     const sql = profileQueries.UPDATE_PROFILE_WEARS;
-    const values = [wear, sub,email];
+    const values = [wears, subs, email];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.send('Wears information saved successfully');
-        }
-    });
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
 });
 
-router.post('/occasion', (req, res) => {
-    const occasion1 = req.body.occasion1;
-    const occasion2 = req.body.occasion2;
-    const occasion3 = req.body.occasion3;
+router.post('/occasions', async (req, res) => {
+    const email = req.body.email;
+    const occasions = req.body.occasions || {};
 
+    const sql = profileQueries.UPDATE_PROFILE_OCCASIONS;
+    const values = [occasions, email];
 
-    const sql = profileQueries.UPDATE_PROFILE_OCCASION;
-    const values = [occasion1, occasion2, occasion3];
-
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.send('Wears information saved successfully');
-        }
-    });
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
 });
 
 
-router.post('/prices', (req, res) => {
-    const prices1 = req.body.prices1;
-    const prices2 = req.body.prices2;
-    const prices3 = req.body.prices3;
-
+router.post('/prices', async (req, res) => {
+    const email = req.body.email;
+    const prices = req.body.prices || {};
 
     const sql = profileQueries.UPDATE_PROFILE_PRICES;
-    const values = [prices1, prices2, prices3];
+    const values = [prices, email];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.send('Wears information saved successfully');
-        }
-    });
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
 });
 
-
-router.post('/color', (req, res) => {
-    const color1 = req.body.color1;
-    const color2 = req.body.color2;
-    const color3 = req.body.color3;
-
+router.post('/colors', async (req, res) => {
+    const email = req.body.email;
+    const colors = req.body.colors || {}; 
 
     const sql = profileQueries.UPDATE_PROFILE_COLORS;
-    const values = [color1, color2, color3];
+    const values = [colors, email];
 
-    db.query(sql, values, (error, results) => {
-        if (error) {
-            res.status(500).send('Error saving user information: ' + error);
-        } else {
-            res.send('Wears information saved successfully');
-        }
-    });
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
 });
 
+
+router.post('/type', async (req, res) => {
+    const email = req.body.email;
+    const type = req.body.type || ''; 
+
+    const sql = profileQueries.UPDATE_PROFILE_TYPE;
+    const values = [type, email];
+
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
+});
+
+router.post('/brands', async (req, res) => {
+    const email = req.body.email;
+    const brands = req.body.brands || ''; 
+
+    const sql = profileQueries.UPDATE_PROFILE_BRANDS;
+    const values = [brands, email];
+
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
+});
+
+router.post('/celebrity', async (req, res) => {
+    const email = req.body.email;
+    const celebrity = req.body.celebrity || ''; 
+
+    const sql = profileQueries.UPDATE_PROFILE_CELEBRITY;
+    const values = [celebrity, email];
+
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
+});
+
+router.post('/skin', async (req, res) => {
+    const email = req.body.email;
+    const skin = req.body.skin|| ''; 
+
+    const sql = profileQueries.UPDATE_PROFILE_SKIN;
+    const values = [skin, email];
+
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
+});
+
+router.post('/picture', async (req, res) => {
+    const email = req.body.email;
+    const picture = req.body.picture || ''; 
+
+    const sql = profileQueries.UPDATE_PROFILE_PICTURE;
+    const values = [picture, email];
+
+    if (!email) {
+        return res.status(400).send('Bad Request')
+    }
+    try {
+        await db.query(sql, values);
+        return res.status(200).send('Done');
+    } catch (error) {
+        console.error(error)
+        res.status(500).send("Something Went Wrong")
+    }
+});
 
 
 module.exports = router;

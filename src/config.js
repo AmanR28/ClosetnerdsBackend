@@ -8,7 +8,7 @@ module.exports = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    reconnect: true,
-    connectTimeout: 60000
+    connectionLimit: 5,
+    reconnect: true
   },
 };

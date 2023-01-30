@@ -3,7 +3,10 @@ const app = express();
 const profile = require('./routes/profile.route');
 const {port} = require('./config')
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({
+  extended: true
+}));
 
 app.get('/', (req, res) => res.send('hi'));
 app.use('/profile', profile);

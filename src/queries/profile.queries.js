@@ -4,27 +4,27 @@ module.exports = {
     `,
     CREATE_PROFILE: `
         INSERT INTO profiles (email, name, phone, gender)
-        VALUES (?, ?, ?, ?)`,
-
+        VALUES (?, ?, ?, ?)
+    `,
     UPDATE_PROFILE_MEASURE: `
         UPDATE profiles 
-        SET bust = ?, waist = ?, hip = ?, length = ?
+        SET measures = ?
         WHERE email = ?`,
     UPDATE_PROFILE_WEARS: `
         UPDATE profiles 
-        SET wear = ?, sub = ?
+        SET wears = ?, subs = ?
         WHERE email = ?`,
-    UPDATE_PROFILE_OCCASION: `
+    UPDATE_PROFILE_OCCASIONS: `
         UPDATE profiles 
-        SET occasion1 = ?, occasion2 = ?, occasion3 = ?
+        SET occasions = ?
         WHERE email = ?`,
     UPDATE_PROFILE_PRICES: `
         UPDATE profiles 
-        SET price1 = ?, price2 = ?, price3 = ?
+        SET prices = ?
         WHERE email = ?`,
     UPDATE_PROFILE_COLORS: `
         UPDATE profiles 
-        SET color1 = ?, color2 = ?, color3 = ?
+        SET colors = ?
         WHERE email = ?`,
     UPDATE_PROFILE_TYPE: `
         UPDATE profiles 

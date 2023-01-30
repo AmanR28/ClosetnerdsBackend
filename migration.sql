@@ -13,7 +13,7 @@ CREATE TABLE profiles (
     subs JSON,
     occasions JSON,
     prices JSON,
-    color JSON,
+    colors JSON,
 
     type ENUM('Triangle','Inverted','Hourglass','Rectangle'),
     
