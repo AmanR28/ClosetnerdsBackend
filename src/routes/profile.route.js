@@ -10,7 +10,9 @@ router.get('/', async (req, res) => {
     try {
         const sql = profileQueries.SHOW_PROFILE;
         const results = await db.query(sql, req.body.email);
-        res.status(200).json(results);
+        if (results.length === 0) 
+            res.status(200).json('Email not Registered');
+        else res.status(200).json(results);
     } catch (error) {
         res.status(400).send(error.message)
     }
