@@ -31,13 +31,13 @@ exports.createProfile = async (req, res) => {
   try {
     const result = await db.query(sql, values);
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
+    res.status(200).send('Done');
     sendgrid.sendMail(
-      'arastogi2810@gmail.com',
-      'New',
-      'hi trial',
-      '<strong>and easy to do anywhere, even with Node.js</strong>',
+      email,
+      'Registration Successful',
+      'Welcome to ClosetNerds',
+      '<h1>Welcome to ClosetNerds</h1>',
     );
-    return res.status(200).send('Done');
   } catch (error) {
     if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
       res.status(400).send('EmailId Already Exist');
