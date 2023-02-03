@@ -1,12 +1,12 @@
 const db = require('../db');
-const { userQueries } = require('../queries');
+const { authQueries } = require('../queries');
 
-exports.getUser = async (req, res) => {
+exports.login = async (req, res) => {
   if (!req.body.email) {
     return res.status(400).send('Bad Request');
   }
   try {
-    const sql = userQueries.GET_USER;
+    const sql = authQueries.GET_USER;
     const results = await db.query(sql, req.body.email);
     if (results.length === 0) res.status(200).json('Email not Registered');
     else res.status(200).json(results);
@@ -15,11 +15,11 @@ exports.getUser = async (req, res) => {
   }
 };
 
-exports.createUser = async (req, res) => {
+exports.signup = async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const sql = userQueries.CREATE_PROFILE;
+  const sql = authQueries.CREATE_PROFILE;
   const values = [email, password];
 
   if (!email || !password) {
@@ -39,3 +39,8 @@ exports.createUser = async (req, res) => {
     }
   }
 };
+
+
+exports.logout = async(res,req) => {
+  res.status(200).send('Under Development');
+}

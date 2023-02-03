@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const { profile, user } = require('./routes');
+const { profileRoute, authRoute } = require('./routes');
 const { port } = require('./config');
 
 app.use(express.json());
@@ -11,8 +11,8 @@ app.use(
 );
 
 app.get('/', (req, res) => res.send('hi'));
-app.use('/profile', profile);
-app.use('/user', user);
+app.use('/profile', profileRoute);
+app.use('/auth', authRoute);
 
 app.all('*', (req, res) => {
   res.status(404).send('Not Found!');

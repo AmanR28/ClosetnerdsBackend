@@ -1,4 +1,4 @@
 module.exports = {
-  profile: require('./profile.route'),
-  user: require('./user.route'),
+  profileRoute: require('./profile.route'),
+  authRoute: require('./auth.route'),
 };
