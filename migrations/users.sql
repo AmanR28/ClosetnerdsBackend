@@ -8,6 +8,8 @@ CREATE TABLE users (
     email   VARCHAR(255) NOT NULL UNIQUE,
     name    VARCHAR(255) ,
     phone   INT,
-    gender  ENUM('male', 'female')
+    gender  ENUM('male', 'female'),
+
+    password VARCHAR(255) NOT NULL
 );
 CREATE INDEX idx_email ON users(email);
