@@ -9,6 +9,10 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     connectionLimit: 5,
-    reconnect: true
+    reconnect: true,
+  },
+  sendgrid: {
+    API_KEY: process.env.SG_API_KEY,
+    SENDER_EMAIL: process.env.SG_SENDER_EMAIL,
   },
 };

@@ -1,3 +1,3 @@
 module.exports = {
-    profileQueries: require('./profile.queries')
-}
+  profileQueries: require('./profile.queries'),
+};
