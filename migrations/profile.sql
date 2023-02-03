@@ -23,10 +23,3 @@ CREATE TABLE profiles (
     picture TEXT
 );
 CREATE INDEX idx_email ON profiles(email);
-
-CREATE TABLE users (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    email   VARCHAR(255) NOT NULL,
-    name    VARCHAR(255)
-);
-CREATE INDEX idx_email ON users(email);
