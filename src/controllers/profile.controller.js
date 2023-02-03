@@ -34,7 +34,7 @@ exports.createProfile = async (req, res) => {
     res.status(200).send('Done');
     sendgrid.sendMail(
       email,
-      'Registration Successful',
+      'Registration 1',
       'Welcome to ClosetNerds',
       '<h1>Welcome to ClosetNerds</h1>',
     );

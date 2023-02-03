@@ -7,9 +7,10 @@ const sendMail = async (to, subject, text, html) => {
   let message = {
     to,
     from: sendgrid.SENDER_EMAIL,
-    subject,
-    text,
-    html,
+    templateId: 'd-399f920f8cf7481eaecac05957c6cb78',
+    dynamic_template_data: {
+      username: to
+    }
   };
 
   try {
