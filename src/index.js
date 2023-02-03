@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const session = require('express-session')
+const session = require('express-session');
 const MariaDBStore = require('express-mysql-session')(session);
 const { profileRoute, authRoute } = require('./routes');
 const { port, secretKey, db } = require('./config');
@@ -15,7 +15,7 @@ app.use(session({
       maxAge: 1000 * 60 * 60 * 24
   },
   store: sessionStore
-}))
+}));
 
 app.use(express.json());
 app.use(
