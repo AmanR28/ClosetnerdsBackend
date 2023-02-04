@@ -1,4 +1,4 @@
-const { sendgrid } = require('../config');
+const { sendgrid, template } = require('../config');
 
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(sendgrid.API_KEY);
@@ -7,7 +7,7 @@ const sendMail = async (to) => {
   let message = {
     to,
     from: sendgrid.SENDER_EMAIL,
-    templateId: 'd-399f920f8cf7481eaecac05957c6cb78',
+    templateId: template.REGISTER,
     dynamic_template_data: {
       username: to,
     },
