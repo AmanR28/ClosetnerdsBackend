@@ -8,6 +8,9 @@ CREATE TABLE profiles (
     phone   INT,
     gender  ENUM('male', 'female'),
 
+    isRegistered BOOLEAN DEFAULT FALSE,
+    mailCount INT DEFAULT 0,
+
     measures JSON,
     wears JSON,
     subs JSON,
