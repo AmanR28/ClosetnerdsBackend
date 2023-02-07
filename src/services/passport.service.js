@@ -1,28 +1,56 @@
 const passport = require('passport');
-const { db } = require('../config');
+const passportJwt = require('passport-jwt');
+const passportLocal = require('passport-local');
+const bcrypt = require('bcrypt');
+const db = require('../db');
+const {secretKey} = require('../config');
 const { authQueries } = require('../queries');
-const LocalStrategy = require('passport-local').Strategy;
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
+const LocalStrategy = passportLocal.Strategy;
+const JwtStrategy = passportJwt.Strategy;
+const ExtractJwt = passportJwt.ExtractJwt;
 
-passport.deserializeUser(async (id, done) => {
-  try {
-    const results = await db.query(authQueries.GET_USER_BY_ID, id);
-    done(null, results[0]);
-  } catch (err) {
-    done(err, null);
-  }
-});
+passport.use(
+  new LocalStrategy(
+    {
+      usernameField: 'email',
+      passwordField: 'password',
+    },
+    async (email, password, done) => {
+      try {
+        const sql = authQueries.GET_USER;
+        const results = await db.query(sql, email);
+        if (results.length === 0) return done(undefined, false);
 
-passport.serializeUser((user, done) => {
-  done(null, user._id);
-});
+        const compare = bcrypt.compare(password, results[0].password);
+        if (!compare) return done(undefined, false);
 
-passport.deserializeUser(async (id, done) => {
-  const sql = authQueries.GET_USER_BY_ID;
-  const results = await db.query(sql, id);
-  const user = results[0];
-  done(null, user);
-});
+        return done(undefined, results[0]);
+      } catch (error) {
+        console.error(error);
+        return done(error);
+      }
+    }
+  )
+);
+
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: secretKey,
+    },
+    async (jwtToken, done) => {
+      const sql = authQueries.GET_USER;
+      const results = await db.query(sql, jwtToken.email);
+
+      console.log(results);
+
+      if (results.length) {
+        return done(undefined, results[0], jwtToken);
+      } else {
+        return done(undefined, false);
+      }
+    }
+  )
+);

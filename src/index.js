@@ -4,6 +4,7 @@ const session = require('express-session');
 const MariaDBStore = require('express-mysql-session')(session);
 const { profileRoute, authRoute } = require('./routes');
 const { port, secretKey, db } = require('./config');
+const passport = require('passport');
 
 const sessionStore = new MariaDBStore(db);
 
@@ -25,6 +26,9 @@ app.use(
     extended: true,
   })
 );
+
+app.use(passport.initialize());
+require('./services/passport.service');
 
 app.get('/', (req, res) => res.send('hi'));
 app.use('/profile', profileRoute);
