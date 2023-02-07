@@ -3,10 +3,10 @@ const config = require('./config');
 const db = mariadb.createPool(config.db);
 
 db.getConnection()
-  .then((conn) => {
+  .then(conn => {
     console.log('Connected to MariaDB database');
   })
-  .catch((err) => {
+  .catch(err => {
     throw err;
   });
 

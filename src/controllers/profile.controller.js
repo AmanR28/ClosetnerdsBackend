@@ -31,13 +31,11 @@ exports.createProfile = async (req, res) => {
   try {
     const result = await db.query(sql, values);
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    sendgrid.sendMail(
-      'arastogi2810@gmail.com',
-      'New',
-      'hi trial',
-      '<strong>and easy to do anywhere, even with Node.js</strong>',
-    );
-    return res.status(200).send('Done');
+    res.status(200).send('Done');
+    sendgrid.sendMail(email, 'Registration Complete');
+    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
+    await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
+    if (mailCount[0].mailCount < 2) console.log(mailCount[0].mailCount);
   } catch (error) {
     if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
       res.status(400).send('EmailId Already Exist');
@@ -246,7 +244,8 @@ exports.updatePicture = async (req, res) => {
   try {
     const result = await db.query(sql, values);
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    res.status(200).send('Done');
+    await sendgrid.sendMail(email, 'Profile Complete');
   } catch (error) {
     console.error(error);
     res.status(500).send('Something Went Wrong');

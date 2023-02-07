@@ -5,6 +5,9 @@ CREATE TABLE profiles (
     
     email   VARCHAR(255) NOT NULL UNIQUE,
 
+    isRegistered BOOLEAN DEFAULT FALSE,
+    mailCount INT DEFAULT 0,
+
     measures JSON,
     wears JSON,
     subs JSON,
