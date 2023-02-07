@@ -1,6 +1,6 @@
 const db = require('../db');
 const { profileQueries } = require('../queries');
-const { sendgrid } = require('../services');
+const sendgrid = require('../services/sendgrid.service');
 
 exports.getProfile = async (req, res) => {
   if (!req.body.email) {
