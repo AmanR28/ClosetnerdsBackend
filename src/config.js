@@ -17,6 +17,6 @@ module.exports = {
     SENDER_EMAIL: process.env.SG_SENDER_EMAIL,
   },
   template: {
-    REGISTER: 'd-399f920f8cf7481eaecac05957c6cb78'
-  }
+    REGISTER: 'd-399f920f8cf7481eaecac05957c6cb78',
+  },
 };

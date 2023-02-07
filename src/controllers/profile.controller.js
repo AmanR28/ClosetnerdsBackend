@@ -32,10 +32,7 @@ exports.createProfile = async (req, res) => {
     const result = await db.query(sql, values);
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
     res.status(200).send('Done');
-    sendgrid.sendMail(email, 'Registration Complete');
-    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
-    await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
-    if (mailCount[0].mailCount < 2) console.log(mailCount[0].mailCount);
+    await sendgrid.smProfileRegister(email);
   } catch (error) {
     if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
       res.status(400).send('EmailId Already Exist');
@@ -245,7 +242,9 @@ exports.updatePicture = async (req, res) => {
     const result = await db.query(sql, values);
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
     res.status(200).send('Done');
-    await sendgrid.sendMail(email, 'Profile Complete');
+    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
+    await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
+    if (mailCount[0].mailCount < 2) await sendgrid.smProfileComplete(email);
   } catch (error) {
     console.error(error);
     res.status(500).send('Something Went Wrong');
