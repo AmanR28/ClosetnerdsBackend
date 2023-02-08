@@ -243,8 +243,10 @@ exports.updatePicture = async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
     res.status(200).send('Done');
     const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
-    await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
-    if (mailCount[0].mailCount < 2) await sendgrid.smProfileComplete(email);
+    if (mailCount[0].mailCount < 1) {
+      await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
+      await sendgrid.smProfileComplete(email);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).send('Something Went Wrong');
