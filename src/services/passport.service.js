@@ -16,19 +16,19 @@ passport.use(
       usernameField: 'email',
       passwordField: 'password',
     },
-    async (email, password, done) => {
+    async (email, password, next) => {
       try {
         const sql = authQueries.GET_USER;
         const results = await db.query(sql, email);
-        if (results.length === 0) return done(undefined, false);
+        if (results.length === 0) return next(undefined, false);
 
         const compare = bcrypt.compare(password, results[0].password);
-        if (!compare) return done(undefined, false);
+        if (!compare) return next(undefined, false);
 
-        return done(undefined, results[0]);
+        return next(undefined, results[0]);
       } catch (error) {
         console.error(error);
-        return done(error);
+        return next(error);
       }
     }
   )
@@ -40,16 +40,14 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: secretKey,
     },
-    async (jwtToken, done) => {
+    async (jwtToken, next) => {
       const sql = authQueries.GET_USER;
       const results = await db.query(sql, jwtToken.email);
 
-      console.log(results);
-
       if (results.length) {
-        return done(undefined, results[0], jwtToken);
+        return next(undefined, results[0], jwtToken);
       } else {
-        return done(undefined, false);
+        return next(undefined, false);
       }
     }
   )
