@@ -3,7 +3,7 @@ const passportJwt = require('passport-jwt');
 const passportLocal = require('passport-local');
 const bcrypt = require('bcrypt');
 const db = require('../db');
-const {secretKey} = require('../config');
+const { secretKey } = require('../config');
 const { authQueries } = require('../queries');
 
 const LocalStrategy = passportLocal.Strategy;

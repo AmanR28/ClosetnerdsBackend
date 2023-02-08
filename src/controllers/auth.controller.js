@@ -3,7 +3,7 @@ const passport = require('passport');
 const db = require('../db');
 const bcrypt = require('bcrypt');
 const { authQueries } = require('../queries');
-const {secretKey} = require('../config');
+const { secretKey } = require('../config');
 const sendgrid = require('../services/sendgrid.service');
 
 exports.login = async (req, res, next) => {
@@ -36,7 +36,6 @@ exports.signup = async (req, res, next) => {
     const token = jwt.sign({ email }, secretKey);
     res.status(200).json({ token: token });
     sendgrid.smSignUp(email);
-
   } catch (error) {
     if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
       res.status(400).send('EmailId Already Exist');
