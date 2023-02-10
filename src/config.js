@@ -17,6 +17,8 @@ module.exports = {
     SENDER_EMAIL: process.env.SG_SENDER_EMAIL,
   },
   template: {
-    REGISTER: 'd-399f920f8cf7481eaecac05957c6cb78',
+    profile_registered: 'd-139a062eb046465483c55768b50afc2c',
+    profile_completed: 'd-0a3dbf1b305d497a833cdcb789e0ee7d',
+    user_registered: 'd-b2b2bf36cdfa4d56813eabb110f87e32',
   },
 };

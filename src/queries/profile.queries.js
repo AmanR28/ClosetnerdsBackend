@@ -47,7 +47,7 @@ module.exports = {
         SET picture = ?
         WHERE email = ?`,
   GET_MAIL_COUNT: `
-        SELECT mailCount FROM profiles WHERE email = ?
+        SELECT name, mailCount FROM profiles WHERE email = ?
     `,
   ADD_MAIL_COUNT: `
         UPDATE profiles 

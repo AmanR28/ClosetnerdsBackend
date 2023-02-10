@@ -1,6 +1,7 @@
 const passport = require('passport');
 const passportJwt = require('passport-jwt');
 const passportLocal = require('passport-local');
+const GoogleStrategy = require('passport-google-oauth20');
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const { secretKey } = require('../config');
@@ -9,6 +10,8 @@ const { authQueries } = require('../queries');
 const LocalStrategy = passportLocal.Strategy;
 const JwtStrategy = passportJwt.Strategy;
 const ExtractJwt = passportJwt.ExtractJwt;
+
+require('dotenv').config();
 
 passport.use(
   new LocalStrategy(
@@ -49,6 +52,20 @@ passport.use(
       } else {
         return next(undefined, false);
       }
+    }
+  )
+);
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GC_CLIENT_ID,
+      clientSecret: process.env.GC_CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/auth/google/result',
+    },
+    function verify(accessToken, refreshToken, profile, cb) {
+      console.log(profile);
+      return cb(null, profile);
     }
   )
 );
