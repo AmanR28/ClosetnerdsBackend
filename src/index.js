@@ -4,6 +4,7 @@ const profileRoute = require('./routes/profile.route');
 const authRoute = require('./routes/auth.route');
 const { port } = require('./config');
 const passport = require('passport');
+const isAuth = require('./middleware/isAuth')
 
 app.use(express.json());
 app.use(
@@ -15,7 +16,7 @@ app.use(
 app.use(passport.initialize());
 require('./services/passport.service');
 
-app.get('/', (req, res) => res.send('hi'));
+app.get('/', isAuth,(req, res) => res.send('hi'));
 app.use('/profile', profileRoute);
 app.use('/auth', authRoute);
 

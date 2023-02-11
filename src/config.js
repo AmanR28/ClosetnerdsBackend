@@ -2,9 +2,9 @@ require('dotenv').config();
 
 module.exports = {
   port: process.env.PORT,
-  TOKEN: {
+  JWT_TOKEN: {
     SECRET_KEY: process.env.SECRET_KEY,
-    EXPIRE_TIME: 3600,
+    EXPIRE_TIME: 2 * 60 * 60 * 1000, // 2H
   },
   db: {
     host: process.env.DB_HOST,

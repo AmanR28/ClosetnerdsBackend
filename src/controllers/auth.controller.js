@@ -3,14 +3,14 @@ const passport = require('passport');
 const db = require('../db');
 const bcrypt = require('bcrypt');
 const authQueries = require('../queries/auth.queries');
-const { TOKEN } = require('../config');
+const { JWT_TOKEN } = require('../config');
 
 const generateToken = email => {
   const payload = {
     email,
-    expiry: new Date(Date.now() + 60 * 60 * 1000),
+    expiry: new Date(Date.now() + JWT_TOKEN.EXPIRE_TIME),
   };
-  let token = jwt.sign(payload, TOKEN.SECRET_KEY);
+  let token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
   return token;
 };
 
@@ -75,7 +75,7 @@ module.exports = {
         expiry: Date.now() + 3600000,
       };
       const name = results[0].name;
-      const token = jwt.sign(payload, TOKEN.secretKey);
+      const token = jwt.sign(payload, JWT_TOKEN.secretKey);
       const uri = `/auth/reset/${token}`;
 
       await sendgrid.smResetPassword(email, name, uri);
