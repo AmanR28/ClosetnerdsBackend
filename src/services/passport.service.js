@@ -97,11 +97,7 @@ passport.use(
             if (user.length===0) 
               return next('INVALID USER', false);
             
-            console.log('u', user)
-
             const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
-
-            console.log(password, result)
 
             if (result.affectedRows===0) return next('SOMETHING WENT WRONG', false);
 

@@ -92,13 +92,13 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    passport.authenticate('reset-password', {session: false}, (err, data) => {
+    passport.authenticate('reset-password', {session: false}, async (err, data) => {
       if (err) {
         console.log(err);
         return res.status(201).json({'error':err});
       }
       res.status(200).send('Password Reset Successfully');
-      // await sendgrid.smResetPasswordSuccess(data);
+      await sendgrid.smResetPasswordSuccess(data.email, data.name);
     })(req, res);
   },
 
