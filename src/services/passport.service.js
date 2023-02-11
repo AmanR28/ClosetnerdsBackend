@@ -61,6 +61,7 @@ passport.use(
 );
 
 passport.use(
+  'google',
   new GoogleStrategy(
     {
       clientID: process.env.GC_CLIENT_ID,
@@ -68,10 +69,6 @@ passport.use(
       callbackURL: 'http://localhost:3000/auth/google/callback',
     },
     function verify(accessToken, rf, tokens, profile, cb) {
-      console.log('accessToken', accessToken);
-      console.log('rf', rf);
-      console.log('profile', profile);
-      console.log('tokens', tokens);
       return cb(null, profile);
     }
   ),

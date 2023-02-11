@@ -104,10 +104,17 @@ module.exports = {
 
   googleAuth: async (req, res) => {
     try {
-      const { authInfo, user } = req;
-      console.log('info', authInfo);
-      console.log('user', user);
-      return res.status(200).send('Done');
+      const { user } = req;
+      const email = user.emails[0].value;
+
+      const search = await db.query(authQueries.GET_USER, [email])
+      if (search.length===0) {
+        await db.query(authQueries.CREATE_PROFILE, [email, '', user.displayName, 0, 'male'])
+      }
+      
+      const token = generateToken(email);
+      return res.status(200).json({token});
+
     } catch (error) {
       console.error(error);
       return res.status(400).json({ error });
