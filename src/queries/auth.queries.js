@@ -9,4 +9,8 @@ module.exports = {
         INSERT INTO users (email, password)
         VALUES (?, ?)
     `,
+  UPDATE_PASSWORD: `
+        UPDATE users 
+        SET password = ?
+        WHERE email = ?`,
 };

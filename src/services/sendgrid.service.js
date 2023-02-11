@@ -19,10 +19,10 @@ module.exports = {
       personalizations: [
         {
           to: {
-            email
+            email,
           },
           dynamic_template_data: {
-            username
+            username,
           },
         },
       ],
@@ -37,10 +37,10 @@ module.exports = {
       personalizations: [
         {
           to: {
-            email
+            email,
           },
           dynamic_template_data: {
-            username
+            username,
           },
         },
       ],
@@ -55,10 +55,28 @@ module.exports = {
       personalizations: [
         {
           to: {
-            email
+            email,
           },
           dynamic_template_data: {
-            username
+            username,
+          },
+        },
+      ],
+    };
+    await sendMail(message);
+  },
+
+  smResetPassword: async (email, username, uri) => {
+    let message = {
+      from: sendgrid.SENDER_EMAIL,
+      template_id: template.user_reset_password,
+      personalizations: [
+        {
+          to: {
+            email,
+          },
+          dynamic_template_data: {
+            username: uri,
           },
         },
       ],

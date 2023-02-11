@@ -1,5 +1,5 @@
 const db = require('../db');
-const { profileQueries } = require('../queries');
+const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
 
 exports.getProfile = async (req, res) => {

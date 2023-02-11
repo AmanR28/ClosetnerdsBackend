@@ -4,8 +4,8 @@ const passportLocal = require('passport-local');
 const GoogleStrategy = require('passport-google-oauth20');
 const bcrypt = require('bcrypt');
 const db = require('../db');
-const { secretKey } = require('../config');
-const { authQueries } = require('../queries');
+const { TOKEN } = require('../config');
+const authQueries = require('../queries/auth.queries');
 
 const LocalStrategy = passportLocal.Strategy;
 const JwtStrategy = passportJwt.Strategy;
@@ -37,11 +37,58 @@ passport.use(
   )
 );
 
+// passport.use(
+//   'reset-password',
+//   new LocalStrategy(
+//     {
+//       usernameField: 'email',
+//       passwordField: 'password',
+//     },
+//     async (req, email, password, next) => {
+//       try {
+//         const token = req.params.token;
+//         console.log(token)
+
+//         const sql = authQueries.UPDATE_PASSWORD;
+//         const password = await bcrypt.hash(req.body.password, 10);
+//         const values = ['', '']
+//         const results = await db.query(sql, email);
+//         if (results.length === 0) return next(undefined, false);
+
+//         const compare = bcrypt.compare(password, results[0].password);
+//         if (!compare) return next(undefined, false);
+
+//       const sql = authQueries.GET_USER_BY_RESET_TOKEN;
+//       const user = await User.findOne({
+//         resetPasswordToken: token,
+//         resetPasswordExpires: { $gt: Date.now() },
+//       }).exec();
+
+//       if (!user) {
+//         return cb(null, false, {
+//           message: 'Password reset token is invalid or has expired.',
+//         });
+//       }
+
+//       user.password = password;
+//       user.resetPasswordToken = undefined;
+//       user.resetPasswordExpires = undefined;
+
+//       await user.save();
+//         return next(undefined, true);
+//       } catch (error) {
+//         console.error(error);
+//         return next(error);
+//       }
+//     }
+//   )
+// )
+
 passport.use(
   new JwtStrategy(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: secretKey,
+      secretOrKey: TOKEN.SECRET_KEY,
     },
     async (jwtToken, next) => {
       const sql = authQueries.GET_USER;
@@ -63,8 +110,11 @@ passport.use(
       clientSecret: process.env.GC_CLIENT_SECRET,
       callbackURL: 'http://localhost:3000/auth/google/result',
     },
-    function verify(accessToken, refreshToken, profile, cb) {
-      console.log(profile);
+    function verify(accessToken, rf, tokens, profile, cb) {
+      console.log('accessToken', accessToken);
+      console.log('rf', rf);
+      console.log('profile', profile);
+      console.log('tokens', tokens);
       return cb(null, profile);
     }
   )

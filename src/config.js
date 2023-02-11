@@ -2,7 +2,10 @@ require('dotenv').config();
 
 module.exports = {
   port: process.env.PORT,
-  secretKey: process.env.SECRET_KEY,
+  TOKEN: {
+    SECRET_KEY: process.env.SECRET_KEY,
+    EXPIRE_TIME: 3600,
+  },
   db: {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -20,5 +23,6 @@ module.exports = {
     profile_registered: 'd-139a062eb046465483c55768b50afc2c',
     profile_completed: 'd-0a3dbf1b305d497a833cdcb789e0ee7d',
     user_registered: 'd-b2b2bf36cdfa4d56813eabb110f87e32',
+    user_reset_password: 'd-8a4f0312002f41c2a3332e3bef7b668b',
   },
 };
