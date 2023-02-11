@@ -4,7 +4,8 @@ const passport = require('passport');
 
 router.post('/login', authController.login);
 router.post('/signup', authController.signup);
-router.post('/reset', authController.recoverPassword);
+router.get('/reset', authController.recoverPassword);
+router.post('/reset', authController.resetPassword);
 
 router.get(
   '/google',
@@ -14,7 +15,7 @@ router.get(
   })
 );
 router.get(
-  '/google/result',
+  '/google/callback',
   passport.authenticate('google', {
     session: false,
     scope: ['profile', 'email'],

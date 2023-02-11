@@ -76,7 +76,26 @@ module.exports = {
             email,
           },
           dynamic_template_data: {
-            username: uri,
+            username,
+            uri,
+          },
+        },
+      ],
+    };
+    await sendMail(message);
+  },
+
+  smResetPasswordSuccess: async (email, username) => {
+    let message = {
+      from: sendgrid.SENDER_EMAIL,
+      template_id: template.user_reset_password_success,
+      personalizations: [
+        {
+          to: {
+            email,
+          },
+          dynamic_template_data: {
+            username,
           },
         },
       ],

@@ -24,5 +24,6 @@ module.exports = {
     profile_completed: 'd-0a3dbf1b305d497a833cdcb789e0ee7d',
     user_registered: 'd-b2b2bf36cdfa4d56813eabb110f87e32',
     user_reset_password: 'd-8a4f0312002f41c2a3332e3bef7b668b',
+    user_reset_password_success: 'd-daf5fb25bdf8418780959691be34438e',
   },
 };

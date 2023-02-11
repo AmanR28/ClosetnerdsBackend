@@ -25,7 +25,8 @@ passport.use(
         const results = await db.query(sql, email);
         if (results.length === 0) return next(undefined, false);
 
-        const compare = bcrypt.compare(password, results[0].password);
+        const compare = await bcrypt.compare(password, results[0].password);
+
         if (!compare) return next(undefined, false);
 
         return next(undefined, results[0]);
@@ -42,10 +43,10 @@ passport.use(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: JWT_TOKEN.SECRET_KEY,
+      passReqToCallback: true
     },
-    async (jwtToken, next) => {
-      if (new Date(jwtToken.expiry).getTime() < Date.now())
-        return next(undefined, false);
+    async (req, jwtToken, next) => {
+      if (new Date(jwtToken.expiry).getTime() < Date.now()) return next(undefined, false);
 
       const sql = authQueries.GET_USER;
       const results = await db.query(sql, jwtToken.email);
@@ -64,7 +65,7 @@ passport.use(
     {
       clientID: process.env.GC_CLIENT_ID,
       clientSecret: process.env.GC_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/google/result',
+      callbackURL: 'http://localhost:3000/auth/google/callback',
     },
     function verify(accessToken, rf, tokens, profile, cb) {
       console.log('accessToken', accessToken);
@@ -75,52 +76,43 @@ passport.use(
     }
   ),
 
+  passport.use(
+    'reset-password',
+    new JwtStrategy(
+      {
+        jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
+        secretOrKey: JWT_TOKEN.SECRET_KEY,
+        passReqToCallback: true
+      },
+        async (req, token, next) => {
+          try {
+            const email = token.email;
+            const password = await bcrypt.hash(req.body.password, 10);
+            if (!token.type === 'reset' || !email || !password) {
+              return next('Bad Request', false)
+            }
 
-// passport.use(
-//   'reset-password',
-//   new LocalStrategy(
-//     {
-//       usernameField: 'email',
-//       passwordField: 'password',
-//     },
-//     async (req, email, password, next) => {
-//       try {
-//         const token = req.params.token;
-//         console.log(token)
+            const user = await db.query(authQueries.GET_USER, [email]);
 
-//         const sql = authQueries.UPDATE_PASSWORD;
-//         const password = await bcrypt.hash(req.body.password, 10);
-//         const values = ['', '']
-//         const results = await db.query(sql, email);
-//         if (results.length === 0) return next(undefined, false);
+            if (user.length===0) 
+              return next('INVALID USER', false);
+            
+            console.log('u', user)
 
-//         const compare = bcrypt.compare(password, results[0].password);
-//         if (!compare) return next(undefined, false);
+            const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
 
-//       const sql = authQueries.GET_USER_BY_RESET_JWT_TOKEN;
-//       const user = await User.findOne({
-//         resetPasswordToken: token,
-//         resetPasswordExpires: { $gt: Date.now() },
-//       }).exec();
+            console.log(password, result)
 
-//       if (!user) {
-//         return cb(null, false, {
-//           message: 'Password reset token is invalid or has expired.',
-//         });
-//       }
+            if (result.affectedRows===0) return next('SOMETHING WENT WRONG', false);
 
-//       user.password = password;
-//       user.resetPasswordToken = undefined;
-//       user.resetPasswordExpires = undefined;
-
-//       await user.save();
-//         return next(undefined, true);
-//       } catch (error) {
-//         console.error(error);
-//         return next(error);
-//       }
-//     }
-//   )
-// )
-
+            return next(undefined, {
+              email:email, name: user[0].name
+            });
+          } catch (err) {
+            console.error(err);
+            return next('SOMETHING WENT WRONG', false);
+          }
+        }
+      )
+  )
 );
