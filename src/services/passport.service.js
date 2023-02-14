@@ -43,7 +43,7 @@ passport.use(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: JWT_TOKEN.SECRET_KEY,
-      passReqToCallback: true
+      passReqToCallback: true,
     },
     async (req, jwtToken, next) => {
       if (new Date(jwtToken.expiry).getTime() < Date.now()) return next(undefined, false);
@@ -71,41 +71,43 @@ passport.use(
     function verify(accessToken, rf, tokens, profile, cb) {
       return cb(null, profile);
     }
-  ),
+  )
+);
 
-  passport.use(
-    'reset-password',
-    new JwtStrategy(
-      {
-        jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
-        secretOrKey: JWT_TOKEN.SECRET_KEY,
-        passReqToCallback: true
-      },
-        async (req, token, next) => {
-          try {
-            const email = token.email;
-            const password = await bcrypt.hash(req.body.password, 10);
-            if (!token.type === 'reset' || !email || !password) {
-              return next('Bad Request', false)
-            }
-
-            const user = await db.query(authQueries.GET_USER, [email]);
-
-            if (user.length===0) 
-              return next('INVALID USER', false);
-            
-            const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
-
-            if (result.affectedRows===0) return next('SOMETHING WENT WRONG', false);
-
-            return next(undefined, {
-              email:email, name: user[0].name
-            });
-          } catch (err) {
-            console.error(err);
-            return next('SOMETHING WENT WRONG', false);
-          }
+passport.use(
+  'reset-password',
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
+      secretOrKey: JWT_TOKEN.SECRET_KEY,
+      passReqToCallback: true,
+    },
+    async (req, token, next) => {
+      try {
+        const email = token.email;
+        const password = await bcrypt.hash(req.body.password, 10);
+        if (!token.type === 'reset' || !email || !password) {
+          return next('Bad Request', false);
         }
-      )
+        if (new Date(token.expiry).getTime() < Date.now()) 
+          return next('Invalid Token', false);
+
+        const user = await db.query(authQueries.GET_USER, [email]);
+
+        if (user.length === 0) return next('INVALID USER', false);
+
+        const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
+
+        if (result.affectedRows === 0) return next('SOMETHING WENT WRONG', false);
+
+        return next(undefined, {
+          email: email,
+          name: user[0].name,
+        });
+      } catch (err) {
+        console.error(err);
+        return next('SOMETHING WENT WRONG', false);
+      }
+    }
   )
 );

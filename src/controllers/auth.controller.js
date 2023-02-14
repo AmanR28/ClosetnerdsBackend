@@ -92,10 +92,9 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    passport.authenticate('reset-password', {session: false}, async (err, data) => {
+    passport.authenticate('reset-password', { session: false }, async (err, data) => {
       if (err) {
-        console.log(err);
-        return res.status(201).json({'error':err});
+        return res.status(201).json({ error: err });
       }
       res.status(200).send('Password Reset Successfully');
       await sendgrid.smResetPasswordSuccess(data.email, data.name);
@@ -107,14 +106,13 @@ module.exports = {
       const { user } = req;
       const email = user.emails[0].value;
 
-      const search = await db.query(authQueries.GET_USER, [email])
-      if (search.length===0) {
-        await db.query(authQueries.CREATE_PROFILE, [email, '', user.displayName, 0, 'male'])
+      const search = await db.query(authQueries.GET_USER, [email]);
+      if (search.length === 0) {
+        await db.query(authQueries.CREATE_PROFILE, [email, '', user.displayName, 0, 'male']);
       }
-      
-      const token = generateToken(email);
-      return res.status(200).json({token});
 
+      const token = generateToken(email);
+      return res.status(200).json({ token });
     } catch (error) {
       console.error(error);
       return res.status(400).json({ error });
