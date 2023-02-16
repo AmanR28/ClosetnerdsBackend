@@ -2,6 +2,7 @@ const passport = require('passport');
 const passportJwt = require('passport-jwt');
 const passportLocal = require('passport-local');
 const GoogleStrategy = require('passport-google-oauth20');
+const FacebookStrategy = require('passport-facebook');
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const { JWT_TOKEN } = require('../config');
@@ -13,31 +14,7 @@ const ExtractJwt = passportJwt.ExtractJwt;
 
 require('dotenv').config();
 
-passport.use(
-  new LocalStrategy(
-    {
-      usernameField: 'email',
-      passwordField: 'password',
-    },
-    async (email, password, next) => {
-      try {
-        const sql = authQueries.GET_USER;
-        const results = await db.query(sql, email);
-        if (results.length === 0) return next(undefined, false);
-
-        const compare = await bcrypt.compare(password, results[0].password);
-
-        if (!compare) return next(undefined, false);
-
-        return next(undefined, results[0]);
-      } catch (error) {
-        console.error(error);
-        return next(error);
-      }
-    }
-  )
-);
-
+// Verify Token
 passport.use(
   new JwtStrategy(
     {
@@ -60,16 +37,29 @@ passport.use(
   )
 );
 
+
+// Local Auth Strategy
 passport.use(
-  'google',
-  new GoogleStrategy(
+  new LocalStrategy(
     {
-      clientID: process.env.GC_CLIENT_ID,
-      clientSecret: process.env.GC_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      usernameField: 'email',
+      passwordField: 'password',
     },
-    function verify(accessToken, rf, tokens, profile, cb) {
-      return cb(null, profile);
+    async (email, password, next) => {
+      try {
+        const sql = authQueries.GET_USER;
+        const results = await db.query(sql, email);
+        if (results.length === 0) return next(undefined, false);
+
+        const compare = await bcrypt.compare(password, results[0].password);
+
+        if (!compare) return next(undefined, false);
+
+        return next(undefined, results[0]);
+      } catch (error) {
+        console.error(error);
+        return next(error);
+      }
     }
   )
 );
@@ -108,6 +98,46 @@ passport.use(
         console.error(err);
         return next('SOMETHING WENT WRONG', false);
       }
+    }
+  )
+);
+
+
+// Google OAuth
+passport.use(
+  'google',
+  new GoogleStrategy(
+    {
+      clientID: process.env.GC_CLIENT_ID,
+      clientSecret: process.env.GC_CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/auth/google/callback',
+    },
+    function verify(accessToken, rf, tokens, profile, cb) {
+      const user = {
+        id: profile.id,
+        name: profile.displayName,
+      }
+      return cb(null, user);
+    }
+  )
+);
+
+
+// Facebook OAuth
+passport.use(
+  'facebook',
+  new FacebookStrategy(
+    {
+      clientID: process.env.FB_CLIENT_ID,
+      clientSecret: process.env.FB_CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/auth/facebook/callback',
+    },
+    function verify(accessToken, refreshToken, profile, cb) {
+      const user = {
+        id: profile.id,
+        name: profile.displayName,
+      }
+      return cb(null, user);
     }
   )
 );

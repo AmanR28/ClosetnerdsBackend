@@ -5,9 +5,9 @@ const bcrypt = require('bcrypt');
 const authQueries = require('../queries/auth.queries');
 const { JWT_TOKEN } = require('../config');
 
-const generateToken = email => {
+const generateToken = id => {
   const payload = {
-    email,
+    id,
     expiry: new Date(Date.now() + JWT_TOKEN.EXPIRE_TIME),
   };
   let token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
@@ -17,6 +17,7 @@ const generateToken = email => {
 const sendgrid = require('../services/sendgrid.service');
 
 module.exports = {
+  // Local 
   login: async (req, res, next) => {
     await passport.authenticate('local', (err, user) => {
       if (err) return next(err);
@@ -32,16 +33,14 @@ module.exports = {
   signup: async (req, res, next) => {
     const email = req.body.email;
     const password = await bcrypt.hash(req.body.password, 10);
-    const name = req.body.name || '';
-    const phone = req.body.phone || 0;
-    const gender = req.body.gender || 'male';
-
-    const sql = authQueries.CREATE_PROFILE;
-    const values = [email, password, name, phone, gender];
+    const name = req.body.name || '';;
 
     if (!email || !password || !name) {
       return res.status(400).send('Bad Request');
     }
+
+    const sql = authQueries.CREATE_PROFILE_BY_EMAIL;
+    const values = [email, password, name];
 
     try {
       const results = await db.query(sql, values);
@@ -101,17 +100,40 @@ module.exports = {
     })(req, res);
   },
 
+
+  // Google 
   googleAuth: async (req, res) => {
     try {
       const { user } = req;
-      const email = user.emails[0].value;
+      const id = user.id;
+      const name = user.name;
 
-      const search = await db.query(authQueries.GET_USER, [email]);
+      const search = await db.query(authQueries.GET_USER_BY_GOOGLE, [id]);
       if (search.length === 0) {
-        await db.query(authQueries.CREATE_PROFILE, [email, '', user.displayName, 0, 'male']);
+        await db.query(authQueries.CREATE_PROFILE_BY_GOOGLE, [id, name]);
       }
 
-      const token = generateToken(email);
+      const token = generateToken(id);
+      return res.status(200).json({ token });
+    } catch (error) {
+      console.error(error);
+      return res.status(400).json({ error });
+    }
+  },
+
+  // Facebook
+  facebookAuth: async (req, res) => {
+    try {
+      const { user } = req;
+      const id = user.id;
+      const name = user.name;
+
+      const search = await db.query(authQueries.GET_USER_BY_FACEBOOK, [id]);
+      if (search.length === 0) {
+        await db.query(authQueries.CREATE_PROFILE_BY_FACEBOOK, [id, name]);
+      }
+
+      const token = generateToken(id);
       return res.status(200).json({ token });
     } catch (error) {
       console.error(error);

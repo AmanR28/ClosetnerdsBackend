@@ -24,4 +24,23 @@ router.get(
   authController.googleAuth
 );
 
+
+router.get(
+  '/facebook',
+  passport.authenticate('facebook', {
+    session: false,
+    // scope: ['profile', 'email'],
+  })
+);
+
+router.get(
+  '/facebook/callback',
+  passport.authenticate('facebook', {
+    session: false,
+    // scope: ['profile', 'email'], 
+  }),
+  authController.facebookAuth
+);
+
+
 module.exports = router;
