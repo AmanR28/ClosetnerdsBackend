@@ -1,18 +1,32 @@
 const db = require('../db');
 const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
+const errorMessages = require('../commons/error_messages');
+const successMessages = require('../commons/success_messages');
+const { SqlError } = require('mariadb');
 
 exports.getProfile = async (req, res) => {
   if (!req.body.email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const sql = profileQueries.SHOW_PROFILE;
+
     const results = await db.query(sql, req.body.email);
-    if (results.length === 0) res.status(200).json('Email not Registered');
-    else res.status(200).json(results);
+
+    if (results.length === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+
+    return res.status(200).send({
+      ...successMessages.PROFILE_INFO,
+      data: results[0],
+    });
   } catch (error) {
-    res.status(500).send('Something Went Wrong');
+    console.error(error);
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -26,19 +40,26 @@ exports.createProfile = async (req, res) => {
   const values = [email, name, phone, gender];
 
   if (!email || !name) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
   try {
-    const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    res.status(200).send('Done');
+    await db.query(sql, values);
+
+    res.status(200).send(successMessages.PROFILE_CREATED);
+
     await sendgrid.smProfileRegister(email, name);
   } catch (error) {
-    if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
-      res.status(400).send('EmailId Already Exist');
+    if (error instanceof SqlError) {
+      if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
+        res.status(409).send(errorMessages.DUPLICATE_FIELD);
+      } else {
+        console.error(error);
+        res.status(500).send(errorMessages.DATABASE_FAILURE);
+      }
     } else {
       console.error(error);
-      res.status(500).send('Something Went Wrong');
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
   }
 };
@@ -53,17 +74,24 @@ exports.updateMeasures = async (req, res) => {
   };
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   const sql = profileQueries.UPDATE_PROFILE_MEASURE;
   const values = [measures, email];
 
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
-    res.status(400).send(error.message);
+    console.error(error);
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -76,15 +104,21 @@ exports.updateWears = async (req, res) => {
   const values = [wears, subs, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -96,15 +130,21 @@ exports.updateOccasions = async (req, res) => {
   const values = [occasions, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -116,15 +156,21 @@ exports.updatePrices = async (req, res) => {
   const values = [prices, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -136,15 +182,21 @@ exports.updateColors = async (req, res) => {
   const values = [colors, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -156,15 +208,21 @@ exports.updateType = async (req, res) => {
   const values = [type, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -176,15 +234,21 @@ exports.updateBrands = async (req, res) => {
   const values = [brands, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -196,15 +260,21 @@ exports.updateCelebrity = async (req, res) => {
   const values = [celebrity, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -216,15 +286,21 @@ exports.updateSkin = async (req, res) => {
   const values = [skin, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    return res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };
 
@@ -236,12 +312,14 @@ exports.updatePicture = async (req, res) => {
   const values = [picture, email];
 
   if (!email) {
-    return res.status(400).send('Bad Request');
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
     const result = await db.query(sql, values);
-    if (result.affectedRows === 0) return res.status(404).send('Id Not Found');
-    res.status(200).send('Done');
+    
+    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    
+    res.status(200).send(successMessages.PROFILE_UPDATED);
 
     const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
     if (mailCount[0].mailCount < 1) {
@@ -250,6 +328,10 @@ exports.updatePicture = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send('Something Went Wrong');
+    if (error instanceof SqlError) {
+      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } else {
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   }
 };

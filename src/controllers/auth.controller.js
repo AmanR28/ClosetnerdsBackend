@@ -17,7 +17,7 @@ const generateToken = id => {
 const sendgrid = require('../services/sendgrid.service');
 
 module.exports = {
-  // Local 
+  // Local
   login: async (req, res, next) => {
     await passport.authenticate('local', (err, user) => {
       if (err) return next(err);
@@ -33,7 +33,7 @@ module.exports = {
   signup: async (req, res, next) => {
     const email = req.body.email;
     const password = await bcrypt.hash(req.body.password, 10);
-    const name = req.body.name || '';;
+    const name = req.body.name || '';
 
     if (!email || !password || !name) {
       return res.status(400).send('Bad Request');
@@ -100,8 +100,7 @@ module.exports = {
     })(req, res);
   },
 
-
-  // Google 
+  // Google
   googleAuth: async (req, res) => {
     try {
       const { user } = req;

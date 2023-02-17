@@ -37,7 +37,6 @@ passport.use(
   )
 );
 
-
 // Local Auth Strategy
 passport.use(
   new LocalStrategy(
@@ -79,8 +78,7 @@ passport.use(
         if (!token.type === 'reset' || !email || !password) {
           return next('Bad Request', false);
         }
-        if (new Date(token.expiry).getTime() < Date.now()) 
-          return next('Invalid Token', false);
+        if (new Date(token.expiry).getTime() < Date.now()) return next('Invalid Token', false);
 
         const user = await db.query(authQueries.GET_USER, [email]);
 
@@ -102,7 +100,6 @@ passport.use(
   )
 );
 
-
 // Google OAuth
 passport.use(
   'google',
@@ -116,12 +113,11 @@ passport.use(
       const user = {
         id: profile.id,
         name: profile.displayName,
-      }
+      };
       return cb(null, user);
     }
   )
 );
-
 
 // Facebook OAuth
 passport.use(
@@ -136,7 +132,7 @@ passport.use(
       const user = {
         id: profile.id,
         name: profile.displayName,
-      }
+      };
       return cb(null, user);
     }
   )
