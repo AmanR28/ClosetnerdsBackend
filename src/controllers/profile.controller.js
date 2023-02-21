@@ -1,9 +1,29 @@
 const db = require('../db');
 const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
+const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
 const { SqlError } = require('mariadb');
+
+const sendProfileCompleteMail = async email => {
+  try {
+    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
+    if (mailCount[0].mailCount < 1) {
+      const sql = profileQueries.SHOW_PROFILE;
+
+      const results = await db.query(sql, email);
+      const user = results[0];
+
+      const pdfDoc = pdfService.profilePdf(user);
+      sendgrid.smProfilePDF(user.email, user.name, Buffer.from(pdfDoc.output('arraybuffer')));
+      
+      await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 exports.getProfile = async (req, res) => {
   if (!req.body.email) {
@@ -13,12 +33,13 @@ exports.getProfile = async (req, res) => {
     const sql = profileQueries.SHOW_PROFILE;
 
     const results = await db.query(sql, req.body.email);
+    const user = results[0];
 
     if (results.length === 0) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    return res.status(200).send({
+    res.status(200).send({
       ...successMessages.PROFILE_INFO,
-      data: results[0],
+      data: user,
     });
   } catch (error) {
     console.error(error);
@@ -160,7 +181,7 @@ exports.updatePrices = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
@@ -186,9 +207,9 @@ exports.updateColors = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
@@ -212,9 +233,9 @@ exports.updateType = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
@@ -238,9 +259,9 @@ exports.updateBrands = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
@@ -264,9 +285,9 @@ exports.updateCelebrity = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
@@ -290,9 +311,9 @@ exports.updateSkin = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
     console.error(error);
@@ -316,16 +337,12 @@ exports.updatePicture = async (req, res) => {
   }
   try {
     const result = await db.query(sql, values);
-    
+
     if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
-    
+
     res.status(200).send(successMessages.PROFILE_UPDATED);
 
-    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
-    if (mailCount[0].mailCount < 1) {
-      await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
-      await sendgrid.smProfileComplete(email, mailCount[0].name);
-    }
+    sendProfileCompleteMail(email);
   } catch (error) {
     console.error(error);
     if (error instanceof SqlError) {

@@ -48,6 +48,32 @@ module.exports = {
     await sendMail(message);
   },
 
+  smProfilePDF: async (email, username, pdf) => {
+    let message = {
+      from: sendgrid.SENDER_EMAIL,
+      template_id: template.profile_completed,
+      personalizations: [
+        {
+          to: {
+            email,
+          },
+          dynamic_template_data: {
+            username,
+          },
+        },
+      ],
+      attachments: [
+        {
+          content: pdf.toString('base64'),
+          filename: 'Profile.pdf',
+          type: 'application/pdf',
+          disposition: 'attachment',
+        },
+      ],
+    };
+    await sendMail(message);
+  },
+
   smSignUp: async (email, username) => {
     let message = {
       from: sendgrid.SENDER_EMAIL,
