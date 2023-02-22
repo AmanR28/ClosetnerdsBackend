@@ -17,7 +17,7 @@ const sendProfileCompleteMail = async email => {
 
       const pdfDoc = pdfService.profilePdf(user);
       sendgrid.smProfilePDF(user.email, user.name, Buffer.from(pdfDoc.output('arraybuffer')));
-      
+
       await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
     }
   } catch (error) {
