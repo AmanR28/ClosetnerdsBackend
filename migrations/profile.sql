@@ -5,7 +5,7 @@ CREATE TABLE profiles (
     
     email   VARCHAR(255) NOT NULL UNIQUE,
     name    VARCHAR(255) ,
-    phone   INT,
+    phone   VARCHAR(20),
     gender  ENUM('male', 'female'),
 
     isRegistered BOOLEAN DEFAULT FALSE,
