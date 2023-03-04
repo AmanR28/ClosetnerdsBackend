@@ -8,13 +8,9 @@ const getUser = (req, res, next) => {
 
   passport.authenticate('jwt', (err, user) => {
     if (err) {
-      if (err == error_messages.INVALID_TOKEN) {
-        return res.status(404).send(error_messages.INVALID_TOKEN);
-      }
-      console.error(err);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      return next();
     }
-    req.user = user;
+    req.jwt_user = user;
     return next();
   })(req, res, next);
 };

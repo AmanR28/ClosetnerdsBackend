@@ -1,19 +1,20 @@
 const router = require('express').Router();
+const getUser = require('../middleware/getUser');
 const profileController = require('../controllers/profile.controller');
 
-router.get('/', profileController.getProfile);
-router.post('/', profileController.createProfile);
-router.post('/measures', profileController.updateMeasures);
-router.post('/wears', profileController.updateWears);
-router.post('/occasions', profileController.updateOccasions);
+router.get('/', getUser, profileController.getProfile);
+router.post('/', getUser, profileController.createProfile);
+router.post('/measures', getUser, profileController.updateMeasures);
+router.post('/wears', getUser, profileController.updateWears);
+router.post('/occasions', getUser, profileController.updateOccasions);
 
-router.post('/prices', profileController.updatePrices);
-router.post('/colors', profileController.updateColors);
+router.post('/prices', getUser, profileController.updatePrices);
+router.post('/colors', getUser, profileController.updateColors);
 
-router.post('/type', profileController.updateType);
-router.post('/brands', profileController.updateBrands);
-router.post('/celebrity', profileController.updateCelebrity);
-router.post('/skin', profileController.updateSkin);
-router.post('/picture', profileController.updatePicture);
+router.post('/type', getUser, profileController.updateType);
+router.post('/brands', getUser, profileController.updateBrands);
+router.post('/celebrity', getUser, profileController.updateCelebrity);
+router.post('/skin', getUser, profileController.updateSkin);
+router.post('/picture', getUser, profileController.updatePicture);
 
 module.exports = router;

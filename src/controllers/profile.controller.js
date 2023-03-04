@@ -1,27 +1,49 @@
 const db = require('../db');
-const { sequelize, Profile } = require('../db2');
-const { ValidationError, DatabaseError } = require('sequelize');
+const { User, Profile } = require('../db2');
+const { ValidationError, DatabaseError, col } = require('sequelize');
 const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
 const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
-const { SqlError } = require('mariadb');
-
+/*  */
 const sendProfileCompleteMail = async email => {
   try {
-    const mailCount = await db.query(profileQueries.GET_MAIL_COUNT, [email]);
-    if (mailCount[0].mailCount < 1) {
-      const sql = profileQueries.SHOW_PROFILE;
+    const user = await User.findOne({ where: { email: email } });
 
-      const results = await db.query(sql, email);
-      const user = results[0];
-
-      const pdfDoc = pdfService.profilePdf(user);
-      sendgrid.smProfilePDF(user.email, user.name, Buffer.from(pdfDoc.output('arraybuffer')));
-
-      await db.query(profileQueries.ADD_MAIL_COUNT, [email]);
+    if (!user) {
+      return res.status(404).send(errorMessages.NOT_FOUND);
     }
+
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    delete profile.dataValues.id;
+    delete profile.dataValues.userId;
+    delete profile.dataValues.createdAt;
+    delete profile.dataValues.updatedAt;
+
+    const data = {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      gender: user.gender,
+      ...profile.dataValues,
+    };
+
+    const pdfDoc = pdfService.profilePdf(data);
+    sendgrid.smProfilePDF(data.email, data.name, Buffer.from(pdfDoc.output('arraybuffer')));
   } catch (error) {
     console.error(error);
   }
@@ -32,20 +54,47 @@ exports.getProfile = async (req, res) => {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const sql = profileQueries.SHOW_PROFILE;
+    const user = await User.findOne({ where: { email: req.body.email } });
 
-    const results = await db.query(sql, req.body.email);
-    const user = results[0];
+    if (!user) {
+      return res.status(404).send(errorMessages.NOT_FOUND);
+    }
 
-    if (results.length === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    delete profile.dataValues.id;
+    delete profile.dataValues.userId;
+    delete profile.dataValues.createdAt;
+    delete profile.dataValues.updatedAt;
 
     res.status(200).send({
       ...successMessages.PROFILE_INFO,
-      data: user,
+      data: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender,
+        ...profile.dataValues,
+      },
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -57,33 +106,48 @@ exports.createProfile = async (req, res) => {
   const email = req.body.email || '';
   const name = req.body.name || '';
   const phone = req.body.phone || 0;
-  const gender = req.body.gender || 'male';
-
-  const sql = profileQueries.CREATE_PROFILE;
-  const values = [email, name, phone, gender];
+  const gender = req.body.gender || 'none';
 
   if (!email || !name) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
 
   try {
-    await db.query(sql, values);
+    let user = await User.findOne({ where: { email } });
 
-    res.status(200).send(successMessages.PROFILE_CREATED);
-
-    await sendgrid.smProfileRegister(email, name);
-  } catch (error) {
-    if (error instanceof SqlError) {
-      if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
-        res.status(409).send(errorMessages.DUPLICATE_FIELD);
-      } else {
-        console.error(error);
-        res.status(500).send(errorMessages.DATABASE_FAILURE);
-      }
-    } else {
-      console.error(error);
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    if (user) {
+      return res.status(409).send(errorMessages.DUPLICATE_FIELD);
     }
+
+    if (!user) {
+      user = await User.create({
+        name: name,
+        gender: gender,
+        email: email,
+        phone: phone,
+      });
+    }
+
+    return res.status(200).json(successMessages.PROFILE_CREATED);
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      if (e.errors[0].message == 'Validation isEmail on email failed') {
+        return res.status(409).send(errorMessages.INVALID_EMAIL);
+      }
+      if (e.errors[0].message == 'Validation isUnique on email failed') {
+        return res.status(409).send(errorMessages.DUPLICATE_FIELD);
+      }
+      if (e.errors[0].message == 'Validation isUnique on phone failed') {
+        return res.status(409).send(errorMessages.DUPLICATE_FIELD);
+      }
+    }
+    if (e instanceof DatabaseError) {
+      console.error(e);
+      return res.status(500).send(errorMessages.DATABASE_FAILURE);
+    }
+
+    console.error(e);
+    return res.status(500).send(errorMessages.SYSTEM_FAILURE);
   }
 };
 
@@ -99,21 +163,39 @@ exports.updateMeasures = async (req, res) => {
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
-  const sql = profileQueries.UPDATE_PROFILE_MEASURE;
-  const values = [measures, email];
 
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.measures = measures;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
+    if (error instanceof DatabaseError) {
+      return res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
   }
 };
@@ -123,21 +205,39 @@ exports.updateWears = async (req, res) => {
   const wears = req.body.wears || {};
   const subs = req.body.subs || {};
 
-  const sql = profileQueries.UPDATE_PROFILE_WEARS;
-  const values = [wears, subs, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.wears = wears;
+    profile.subs = subs;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -149,21 +249,38 @@ exports.updateOccasions = async (req, res) => {
   const email = req.body.email;
   const occasions = req.body.occasions || {};
 
-  const sql = profileQueries.UPDATE_PROFILE_OCCASIONS;
-  const values = [occasions, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.occasions = occasions;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -173,49 +290,81 @@ exports.updateOccasions = async (req, res) => {
 
 exports.updatePrices = async (req, res) => {
   const email = req.body.email;
-  const prices = req.body.prices || {};
+  const prices = req.body.prices;
 
-  const sql = profileQueries.UPDATE_PROFILE_PRICES;
-  const values = [prices, email];
-
-  if (!email) {
+  if (!email || !prices) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.prices = prices;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
-    console.error(error);
-    if (error instanceof SqlError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
     }
+    console.error(error);
+    if (error instanceof DatabaseError) {
+      return res.status(500).send(errorMessages.DATABASE_FAILURE);
+    }
+    return res.status(500).send(errorMessages.SYSTEM_FAILURE);
   }
 };
 
 exports.updateColors = async (req, res) => {
   const email = req.body.email;
-  const colors = req.body.colors || {};
+  const colors = req.body.colors;
 
-  const sql = profileQueries.UPDATE_PROFILE_COLORS;
-  const values = [colors, email];
-
-  if (!email) {
+  if (!email || !colors) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.colors = colors;
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -227,21 +376,38 @@ exports.updateType = async (req, res) => {
   const email = req.body.email;
   const type = req.body.type || '';
 
-  const sql = profileQueries.UPDATE_PROFILE_TYPE;
-  const values = [type, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.type = profile.type;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -253,21 +419,38 @@ exports.updateBrands = async (req, res) => {
   const email = req.body.email;
   const brands = req.body.brands || '';
 
-  const sql = profileQueries.UPDATE_PROFILE_BRANDS;
-  const values = [brands, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.brands = brands;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -279,21 +462,38 @@ exports.updateCelebrity = async (req, res) => {
   const email = req.body.email;
   const celebrity = req.body.celebrity || '';
 
-  const sql = profileQueries.UPDATE_PROFILE_CELEBRITY;
-  const values = [celebrity, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.celebrity = celebrity;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -305,21 +505,38 @@ exports.updateSkin = async (req, res) => {
   const email = req.body.email;
   const skin = req.body.skin || '';
 
-  const sql = profileQueries.UPDATE_PROFILE_SKIN;
-  const values = [skin, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.skin = skin;
+    await profile.validate();
+    await profile.save();
 
     return res.status(200).send(successMessages.PROFILE_UPDATED);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -331,23 +548,40 @@ exports.updatePicture = async (req, res) => {
   const email = req.body.email;
   const picture = req.body.picture || '';
 
-  const sql = profileQueries.UPDATE_PROFILE_PICTURE;
-  const values = [picture, email];
-
   if (!email) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
-    const result = await db.query(sql, values);
+    const user = await User.findOne({ where: { email: email } });
+    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
 
-    if (result.affectedRows === 0) return res.status(404).send(errorMessages.NOT_FOUND);
+    if (user.isRegistered) {
+      const jwt_user = req.jwt_user;
+      if (!jwt_user || jwt_user.id != user.id) {
+        return res.status(401).send(errorMessages.UNAUTHORIZED);
+      }
+    }
+
+    const profile = await Profile.findByPk(user.profileId);
+
+    if (!profile) {
+      console.error('Profile Not Associated with user ', user.id);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+
+    profile.picture = picture;
+    await profile.validate();
+    await profile.save();
 
     res.status(200).send(successMessages.PROFILE_UPDATED);
 
     sendProfileCompleteMail(email);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).send(errorMessages.BAD_REQUEST);
+    }
     console.error(error);
-    if (error instanceof SqlError) {
+    if (error instanceof DatabaseError) {
       res.status(500).send(errorMessages.DATABASE_FAILURE);
     } else {
       res.status(500).send(errorMessages.SYSTEM_FAILURE);

@@ -21,6 +21,11 @@ module.exports = {
     code: 'INVALID_EMAIL',
   },
 
+  BAD_REQUEST: {
+    state: 'Failure',
+    code: 'BAD_REQUEST',
+  },
+
   // Conflict : 409
   DUPLICATE_FIELD: {
     state: 'Failure',
@@ -34,6 +39,16 @@ module.exports = {
   },
 
   // Unauthorized : 401
+  UNAUTHORIZED: {
+    state: 'Failure',
+    code: 'UNAUTHORIZED',
+  },
+
+  NOT_REGISTERED: {
+    state: 'Failure',
+    code: 'NOT_REGISTERED',
+  },
+
   INVALID_CREDENTIAL: {
     state: 'Failure',
     code: 'INVALID_CREDENTIAL',

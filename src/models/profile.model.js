@@ -2,12 +2,7 @@ const { Sequelize, DataTypes, Model } = require('sequelize');
 const bcrypt = require('bcrypt');
 
 module.exports = sequelize => {
-  class Profile extends Model {
-    async checkPassword(password) {}
-    static async getPassword(password) {
-      return bcrypt.hash(password, 10);
-    }
-  }
+  class Profile extends Model {}
 
   Profile.init(
     {
@@ -17,7 +12,7 @@ module.exports = sequelize => {
         defaultValue: Sequelize.UUIDV4,
       },
 
-      uid: {
+      userId: {
         type: Sequelize.UUID,
       },
 
@@ -38,9 +33,6 @@ module.exports = sequelize => {
       },
       type: {
         type: DataTypes.ENUM(['Triangle', 'Inverted', 'Hourglass', 'Rectangle']),
-      },
-      prices: {
-        type: DataTypes.TEXT,
       },
       celebrity: {
         type: DataTypes.TEXT,

@@ -8,7 +8,7 @@ const db = require('../db');
 const { User } = require('../db2');
 const { JWT_TOKEN, google, facebook } = require('../config');
 const authQueries = require('../queries/auth.queries');
-const error_messages = require('../commons/error_messages');
+const errorMessages = require('../commons/error_messages');
 
 const LocalStrategy = passportLocal.Strategy;
 const JwtStrategy = passportJwt.Strategy;
@@ -26,22 +26,16 @@ passport.use(
     },
     async (req, jwtToken, next) => {
       if (new Date(jwtToken.expiry).getTime() < Date.now()) {
-        return next(error_messages.TOKEN_EXPIRED);
+        return next(errorMessages.TOKEN_EXPIRED);
       }
 
       const user = await User.findOne({ where: { id: jwtToken.id } });
 
       if (!user) {
-        return next(error_messages.INVALID_TOKEN);
+        return next(errorMessages.INVALID_TOKEN);
       }
 
-      const data = {
-        name: user.name,
-        gender: user.gender,
-        profileId: user.profileId,
-      };
-
-      return next(undefined, data);
+      return next(undefined, user);
     }
   )
 );
@@ -57,11 +51,15 @@ passport.use(
       try {
         const user = await User.findOne({ where: { email: email } });
 
-        if (!user) return next(error_messages.NOT_FOUND);
+        if (!user) return next(errorMessages.NOT_FOUND);
 
-        const compare = await bcrypt.compare(password, user.password);
+        if (!user.isRegistered || !user.isPasswordAuth) {
+          return next(errorMessages.NOT_REGISTERED);
+        }
 
-        if (!compare) return next(error_messages.INVALID_CREDENTIAL);
+        const compare = await user.checkPassword(password);
+
+        if (!compare) return next(errorMessages.INVALID_CREDENTIAL);
 
         return next(undefined, user);
       } catch (error) {

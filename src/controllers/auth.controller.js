@@ -35,6 +35,10 @@ module.exports = {
           return res.status(401).send(errorMessages.INVALID_CREDENTIAL);
         }
 
+        if (err == error_messages.NOT_REGISTERED) {
+          return res.status(401).send(errorMessages.NOT_REGISTERED);
+        }
+
         if (err instanceof DatabaseError) {
           console.error(err);
           return res.status(500).send(errorMessages.DATABASE_FAILURE);
@@ -54,10 +58,10 @@ module.exports = {
 
   signup: async (req, res, next) => {
     const email = req.body.email;
-    const gender = req.body.gender || 'none';
-    const password = await bcrypt.hash(req.body.password, 10);
+    const password = req.body.password;
     const name = req.body.name || '';
-    const phone = req.body.phone || null;
+    const phone = req.body.phone;
+    const gender = req.body.gender || 'none';
 
     if (!name || !email || !password) {
       return res.status(400).send(errorMessages.MISSING_FIELD);
@@ -70,28 +74,24 @@ module.exports = {
         if (user.isPasswordAuth) {
           return res.status(409).send(errorMessages.DUPLICATE_FIELD);
         }
-
-        user.gender = gender;
-        user.password = await User.getPassword(password);
-        user.isPasswordAuth = true;
-        await user.save();
       }
 
       if (!user) {
-        user = await User.create({
-          name: name,
-          gender: gender,
-
-          isRegistered: true,
-
-          email: email,
-
-          password: password,
-          isPasswordAuth: true,
-
+        user = User.build({
           phone: phone,
+          email: email,
         });
       }
+
+      user.isRegistered = true;
+
+      user.isPasswordAuth = true;
+      user.password = await User.getPassword(password);
+
+      user.name = name;
+      user.gender = gender;
+
+      await user.save();
 
       const token = generateToken(user.id);
 
@@ -175,11 +175,12 @@ module.exports = {
         user = await User.findOne({ where: { email: req.user.email } });
 
         if (user) {
-          user.name = req.user.name;
           user.isRegistered = true;
-          user.emailVerified = true;
-          user.googleId = req.user.id;
+
           user.isGoogleAuth = true;
+          user.googleId = req.user.id;
+
+          user.name = req.user.name;
           await user.save();
         }
       }
@@ -191,7 +192,6 @@ module.exports = {
           isRegistered: true,
 
           email: req.user.email,
-          emailVerified: true,
 
           googleId: req.user.id,
           isGoogleAuth: true,
@@ -211,18 +211,22 @@ module.exports = {
   // Facebook
   facebookAuth: async (req, res) => {
     try {
-      const { user } = req;
+      let user = await User.findOne({ where: { facebookId: req.user.id } });
 
-      await User.create({
-        name: user.name,
+      if (!user) {
+        user = await User.create({
+          name: req.user.name,
 
-        isRegistered: true,
+          isRegistered: true,
 
-        facebookId: user.id,
-        isFacebookAuth: true,
-      });
+          email: req.user.email,
 
-      const token = generateToken(id);
+          facebookId: req.user.id,
+          isFacebookAuth: true,
+        });
+      }
+
+      const token = generateToken(user.id);
 
       return res.status(200).json({
         ...successMessages.AUTH_SUCCESS,

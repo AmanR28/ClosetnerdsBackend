@@ -3,7 +3,9 @@ const bcrypt = require('bcrypt');
 
 module.exports = sequelize => {
   class User extends Model {
-    async checkPassword(password) {}
+    async checkPassword(password) {
+      return bcrypt.compare(password, this.password);
+    }
     static async getPassword(password) {
       return bcrypt.hash(password, 10);
     }

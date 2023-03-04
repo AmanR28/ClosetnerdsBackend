@@ -11,7 +11,7 @@ const isAuth = (req, res, next) => {
       console.error(err);
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
-    req.user = user;
+    req.jwt_user = user;
     next();
   })(req, res, next);
 };
