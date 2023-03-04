@@ -15,13 +15,6 @@ const sendProfileCompleteMail = async email => {
       return res.status(404).send(errorMessages.NOT_FOUND);
     }
 
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
     const profile = await Profile.findByPk(user.profileId);
 
     if (!profile) {

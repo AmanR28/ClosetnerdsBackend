@@ -22,14 +22,14 @@ sequelize
     console.error('Sequelize Failed: ', error);
   });
 
-sequelize
-  .sync({ alter: true })
-  .then(async () => {
-    console.log('Sync Success!');
-  })
-  .catch(error => {
-    console.error('Sync Failed ', error);
-  });
+// sequelize
+//   .sync({ alter: true })
+//   .then(async () => {
+//     console.log('Sync Success!');
+//   })
+//   .catch(error => {
+//     console.error('Sync Failed ', error);
+//   });
 
 app.use(express.json());
 app.use(

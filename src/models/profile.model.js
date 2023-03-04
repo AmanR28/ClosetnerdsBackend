@@ -1,4 +1,4 @@
-const { Sequelize, DataTypes, Model } = require('sequelize');
+const { Sequelize, Model } = require('sequelize');
 const bcrypt = require('bcrypt');
 
 module.exports = sequelize => {
@@ -17,36 +17,40 @@ module.exports = sequelize => {
       },
 
       measures: {
-        type: DataTypes.JSON,
+        type: Sequelize.JSON,
       },
       wears: {
-        type: DataTypes.JSON,
+        type: Sequelize.JSON,
       },
       subs: {
-        type: DataTypes.JSON,
+        type: Sequelize.JSON,
       },
       occasions: {
-        type: DataTypes.JSON,
+        type: Sequelize.JSON,
       },
       prices: {
-        type: DataTypes.JSON,
+        type: Sequelize.JSON,
       },
       type: {
-        type: DataTypes.ENUM(['Triangle', 'Inverted', 'Hourglass', 'Rectangle']),
+        type: Sequelize.ENUM(['Triangle', 'Inverted', 'Hourglass', 'Rectangle']),
+      },
+      brands: {
+        type: Sequelize.TEXT,
       },
       celebrity: {
-        type: DataTypes.TEXT,
+        type: Sequelize.TEXT,
       },
       skin: {
-        type: DataTypes.TEXT,
+        type: Sequelize.TEXT,
       },
       pictures: {
-        type: DataTypes.TEXT,
+        type: Sequelize.TEXT,
       },
     },
     {
       sequelize,
       modelName: 'profs',
+      timestamps: false,
     }
   );
 

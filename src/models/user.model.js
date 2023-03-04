@@ -114,6 +114,7 @@ module.exports = sequelize => {
     {
       sequelize,
       modelName: 'usr',
+      timestamps: false,
     }
   );
 

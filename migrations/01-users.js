@@ -1,10 +1,10 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('usr', {
+    await queryInterface.createTable('usrs', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         primaryKey: true,
-        autoIncrement: true,
+        defaultValue: Sequelize.UUIDV4,
       },
 
       name: {
@@ -12,13 +12,13 @@ module.exports = {
         allowNull: false,
       },
       gender: {
-        type: Sequelize.STRING,
+        type: Sequelize.ENUM('male', 'female', 'none'),
         allowNull: false,
-        defaultValue: 'male',
+        defaultValue: 'none',
       },
 
       role: {
-        type: Sequelize.STRING,
+        type: Sequelize.ENUM('client', 'admin'),
         allowNull: false,
         defaultValue: 'client',
       },
@@ -31,6 +31,16 @@ module.exports = {
 
       email: {
         type: Sequelize.STRING,
+        unique: true,
+        validate: {
+          isEmail: true,
+          async isUnique(email) {
+            const user = await User.findOne({ where: { email } });
+            if (user) {
+              throw new Error('Validation isUnique on email failed');
+            }
+          },
+        },
       },
       emailVerified: {
         type: Sequelize.BOOLEAN,
@@ -49,7 +59,17 @@ module.exports = {
       },
 
       phone: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(20),
+        async isUnique(email) {
+          const user = await User.findOne({ where: { email } });
+          if (user) {
+            throw new Error('Validation isUnique on phone failed');
+          }
+        },
+      },
+      phoneVerified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
       },
       isPhoneAuth: {
         type: Sequelize.BOOLEAN,
@@ -76,11 +96,11 @@ module.exports = {
       },
 
       profileId: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
       },
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('usr');
+    await queryInterface.dropTable('usrs');
   },
 };
