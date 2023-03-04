@@ -16,6 +16,11 @@ module.exports = {
     code: 'MISSING_FIELD',
   },
 
+  INVALID_EMAIL: {
+    state: 'Failure',
+    code: 'INVALID_EMAIL',
+  },
+
   // Conflict : 409
   DUPLICATE_FIELD: {
     state: 'Failure',
@@ -26,5 +31,16 @@ module.exports = {
   NOT_FOUND: {
     state: 'Failure',
     code: 'NOT_FOUND',
+  },
+
+  // Unauthorized : 401
+  INVALID_CREDENTIAL: {
+    state: 'Failure',
+    code: 'INVALID_CREDENTIAL',
+  },
+
+  INVALID_TOKEN: {
+    state: 'Failure',
+    code: 'INVALID_TOKEN',
   },
 };

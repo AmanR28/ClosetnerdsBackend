@@ -5,8 +5,10 @@ const GoogleStrategy = require('passport-google-oauth20');
 const FacebookStrategy = require('passport-facebook');
 const bcrypt = require('bcrypt');
 const db = require('../db');
-const { JWT_TOKEN } = require('../config');
+const { User } = require('../db2');
+const { JWT_TOKEN, google, facebook } = require('../config');
 const authQueries = require('../queries/auth.queries');
+const error_messages = require('../commons/error_messages');
 
 const LocalStrategy = passportLocal.Strategy;
 const JwtStrategy = passportJwt.Strategy;
@@ -23,16 +25,23 @@ passport.use(
       passReqToCallback: true,
     },
     async (req, jwtToken, next) => {
-      if (new Date(jwtToken.expiry).getTime() < Date.now()) return next(undefined, false);
-
-      const sql = authQueries.GET_USER;
-      const results = await db.query(sql, jwtToken.email);
-
-      if (results.length) {
-        return next(undefined, results[0], jwtToken);
-      } else {
-        return next(undefined, false);
+      if (new Date(jwtToken.expiry).getTime() < Date.now()) {
+        return next(error_messages.TOKEN_EXPIRED);
       }
+
+      const user = await User.findOne({ where: { id: jwtToken.id } });
+
+      if (!user) {
+        return next(error_messages.INVALID_TOKEN);
+      }
+
+      const data = {
+        name: user.name,
+        gender: user.gender,
+        profileId: user.profileId,
+      };
+
+      return next(undefined, data);
     }
   )
 );
@@ -46,17 +55,16 @@ passport.use(
     },
     async (email, password, next) => {
       try {
-        const sql = authQueries.GET_USER_BY_EMAIL;
-        const results = await db.query(sql, email);
-        if (results.length === 0) return next(undefined, false);
+        const user = await User.findOne({ where: { email: email } });
 
-        const compare = await bcrypt.compare(password, results[0].password);
+        if (!user) return next(error_messages.NOT_FOUND);
 
-        if (!compare) return next(undefined, false);
+        const compare = await bcrypt.compare(password, user.password);
 
-        return next(undefined, results[0]);
+        if (!compare) return next(error_messages.INVALID_CREDENTIAL);
+
+        return next(undefined, user);
       } catch (error) {
-        console.error(error);
         return next(error);
       }
     }
@@ -106,15 +114,18 @@ passport.use(
   'google',
   new GoogleStrategy(
     {
-      clientID: process.env.GC_CLIENT_ID,
-      clientSecret: process.env.GC_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      clientID: google.CLIENT_ID,
+      clientSecret: google.CLIENT_SECRET,
+      callbackURL: google.CALLBACK,
     },
     function verify(accessToken, rf, tokens, profile, cb) {
       const user = {
         id: profile.id,
         name: profile.displayName,
+        email: profile.emails[0].value,
+        isRegistered: true,
       };
+      console.log(user);
       return cb(null, user);
     }
   )
@@ -125,14 +136,16 @@ passport.use(
   'facebook',
   new FacebookStrategy(
     {
-      clientID: process.env.FB_CLIENT_ID,
-      clientSecret: process.env.FB_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/facebook/callback',
+      clientID: facebook.CLIENT_ID,
+      clientSecret: facebook.CLIENT_SECRET,
+      callbackURL: facebook.CALLBACK,
     },
     function verify(accessToken, refreshToken, profile, cb) {
+      console.log(profile);
       const user = {
         id: profile.id,
         name: profile.displayName,
+        isRegistered: true,
       };
       return cb(null, user);
     }

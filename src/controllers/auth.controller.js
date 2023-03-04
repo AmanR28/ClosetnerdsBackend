@@ -1,12 +1,17 @@
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const { ValidationError, DatabaseError } = require('sequelize');
 const db = require('../db');
+const { sequelize, User } = require('../db2');
 const bcrypt = require('bcrypt');
 const authQueries = require('../queries/auth.queries');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
 const { JWT_TOKEN } = require('../config');
 const { SqlError } = require('mariadb');
+const sendgrid = require('../services/sendgrid.service');
+const success_messages = require('../commons/success_messages');
+const error_messages = require('../commons/error_messages');
 
 const generateToken = id => {
   const payload = {
@@ -17,61 +22,102 @@ const generateToken = id => {
   return token;
 };
 
-const sendgrid = require('../services/sendgrid.service');
-const success_messages = require('../commons/success_messages');
-
 module.exports = {
   // Local
-  login: async (req, res, next) => {
+  login: async (req, res) => {
     await passport.authenticate('local', (err, user) => {
-      if (err) return next(err);
-      if (!user) {
-        return res.status(401).send(errorMessages.NOT_FOUND);
-      } else {
-        const token = generateToken(user.email);
-        res.status(200).json({
-          ...success_messages.AUTH_SUCCESS,
-          token: token,
-        });
+      if (err) {
+        if (err == error_messages.NOT_FOUND) {
+          return res.status(404).send(errorMessages.NOT_FOUND);
+        }
+
+        if (err == error_messages.INVALID_CREDENTIAL) {
+          return res.status(401).send(errorMessages.INVALID_CREDENTIAL);
+        }
+
+        if (err instanceof DatabaseError) {
+          console.error(err);
+          return res.status(500).send(errorMessages.DATABASE_FAILURE);
+        }
+
+        console.error(err);
+        return res.status(500).send(errorMessages.SYSTEM_FAILURE);
       }
-    })(req, res, next);
+
+      const token = generateToken(user.id);
+      res.status(200).json({
+        ...success_messages.AUTH_SUCCESS,
+        token: token,
+      });
+    })(req, res);
   },
 
   signup: async (req, res, next) => {
     const email = req.body.email;
+    const gender = req.body.gender || 'none';
     const password = await bcrypt.hash(req.body.password, 10);
     const name = req.body.name || '';
+    const phone = req.body.phone || null;
 
-    if (!email || !password || !name) {
+    if (!name || !email || !password) {
       return res.status(400).send(errorMessages.MISSING_FIELD);
     }
 
-    const sql = authQueries.CREATE_PROFILE_BY_EMAIL;
-    const values = [email, password, name];
-
     try {
-      await db.query(sql, values);
+      let user = await User.findOne({ where: { email } });
 
-      const token = generateToken(email);
+      if (user) {
+        if (user.isPasswordAuth) {
+          return res.status(409).send(errorMessages.DUPLICATE_FIELD);
+        }
 
-      res.status(200).json({
+        user.gender = gender;
+        user.password = await User.getPassword(password);
+        user.isPasswordAuth = true;
+        await user.save();
+      }
+
+      if (!user) {
+        user = await User.create({
+          name: name,
+          gender: gender,
+
+          isRegistered: true,
+
+          email: email,
+
+          password: password,
+          isPasswordAuth: true,
+
+          phone: phone,
+        });
+      }
+
+      const token = generateToken(user.id);
+
+      return res.status(200).json({
         ...successMessages.AUTH_SUCCESS,
         token: token,
       });
-
-      sendgrid.smSignUp(email);
-    } catch (error) {
-      if (error instanceof SqlError) {
-        if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
-          res.status(409).send(errorMessages.DUPLICATE_FIELD);
-        } else {
-          console.error(error);
-          res.status(500).send(errorMessages.DATABASE_FAILURE);
+    } catch (e) {
+      if (e instanceof ValidationError) {
+        if (e.errors[0].message == 'Validation isEmail on email failed') {
+          return res.status(409).send(errorMessages.INVALID_EMAIL);
         }
-      } else {
-        console.error(error);
-        res.status(500).send(errorMessages.SYSTEM_FAILURE);
+        if (e.errors[0].message == 'Validation isUnique on email failed') {
+          return res.status(409).send(errorMessages.DUPLICATE_FIELD);
+        }
+        if (e.errors[0].message == 'Validation isUnique on phone failed') {
+          return res.status(409).send(errorMessages.DUPLICATE_FIELD);
+        }
       }
+      if (e instanceof DatabaseError) {
+        console.error(e);
+        return res.status(500).send(errorMessages.DATABASE_FAILURE);
+      }
+
+      console.error(e);
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
   },
 
@@ -123,16 +169,35 @@ module.exports = {
   // Google
   googleAuth: async (req, res) => {
     try {
-      const { user } = req;
-      const id = user.id;
-      const name = user.name;
+      let user = await User.findOne({ where: { googleId: req.user.id } });
 
-      const search = await db.query(authQueries.GET_USER_BY_GOOGLE, [id]);
-      if (search.length === 0) {
-        await db.query(authQueries.CREATE_PROFILE_BY_GOOGLE, [id, name]);
+      if (!user) {
+        user = await User.findOne({ where: { email: req.user.email } });
+
+        if (user) {
+          user.name = req.user.name;
+          user.isRegistered = true;
+          user.emailVerified = true;
+          user.googleId = req.user.id;
+          user.isGoogleAuth = true;
+          await user.save();
+        }
       }
 
-      const token = generateToken(id);
+      if (!user)
+        user = await User.create({
+          name: req.user.name,
+
+          isRegistered: true,
+
+          email: req.user.email,
+          emailVerified: true,
+
+          googleId: req.user.id,
+          isGoogleAuth: true,
+        });
+
+      const token = generateToken(user.id);
       return res.status(200).json({
         ...successMessages.AUTH_SUCCESS,
         token,
@@ -147,13 +212,15 @@ module.exports = {
   facebookAuth: async (req, res) => {
     try {
       const { user } = req;
-      const id = user.id;
-      const name = user.name;
 
-      const search = await db.query(authQueries.GET_USER_BY_FACEBOOK, [id]);
-      if (search.length === 0) {
-        await db.query(authQueries.CREATE_PROFILE_BY_FACEBOOK, [id, name]);
-      }
+      await User.create({
+        name: user.name,
+
+        isRegistered: true,
+
+        facebookId: user.id,
+        isFacebookAuth: true,
+      });
 
       const token = generateToken(id);
 

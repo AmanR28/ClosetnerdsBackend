@@ -1,5 +1,20 @@
 require('dotenv').config();
 
+ENV = process.env.NODE_ENV || 'local';
+
+let GC_CALLBACK, FB_CALLBACK;
+
+if (ENV === 'production') {
+  GC_CALLBACK = 'https://closetnerds.in/auth/google/callback';
+  FB_CALLBACK = 'https://closetnerds.in/auth/facebook/callback';
+} else if (ENV === 'development') {
+  GC_CALLBACK = 'https://development.closetnerds.in/auth/google/callback';
+  FB_CALLBACK = 'https://development.closetnerds.in/auth/facebook/callback';
+} else {
+  GC_CALLBACK = 'http://localhost:3000/auth/google/callback';
+  FB_CALLBACK = 'http://localhost:3000/auth/facebook/callback';
+}
+
 module.exports = {
   port: process.env.PORT,
   JWT_TOKEN: {
@@ -14,6 +29,7 @@ module.exports = {
     database: process.env.DB_DATABASE,
     connectionLimit: 5,
     reconnect: true,
+    dialect: process.env.DB_DIALECT,
   },
   sendgrid: {
     API_KEY: process.env.SG_API_KEY,
@@ -25,5 +41,17 @@ module.exports = {
     user_registered: 'd-b2b2bf36cdfa4d56813eabb110f87e32',
     user_reset_password: 'd-8a4f0312002f41c2a3332e3bef7b668b',
     user_reset_password_success: 'd-daf5fb25bdf8418780959691be34438e',
+  },
+
+  google: {
+    CLIENT_ID: process.env.GC_CLIENT_ID,
+    CLIENT_SECRET: process.env.GC_CLIENT_SECRET,
+    CALLBACK: GC_CALLBACK,
+  },
+
+  facebook: {
+    CLIENT_ID: process.env.FB_CLIENT_ID,
+    CLIENT_SECRET: process.env.FB_CLIENT_SECRET,
+    CALLBACK: FB_CALLBACK,
   },
 };

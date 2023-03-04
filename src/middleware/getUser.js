@@ -1,8 +1,11 @@
 const passport = require('passport');
-const { ValidationError, DatabaseError } = require('sequelize');
 const error_messages = require('../commons/error_messages');
 
-const isAuth = (req, res, next) => {
+const getUser = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) return next();
+
   passport.authenticate('jwt', (err, user) => {
     if (err) {
       if (err == error_messages.INVALID_TOKEN) {
@@ -12,8 +15,8 @@ const isAuth = (req, res, next) => {
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
     req.user = user;
-    next();
+    return next();
   })(req, res, next);
 };
 
-module.exports = isAuth;
+module.exports = getUser;

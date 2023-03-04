@@ -1,4 +1,6 @@
 const db = require('../db');
+const { sequelize, Profile } = require('../db2');
+const { ValidationError, DatabaseError } = require('sequelize');
 const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
 const pdfService = require('../services/pdf.service');
