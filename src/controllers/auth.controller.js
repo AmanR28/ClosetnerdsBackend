@@ -3,7 +3,10 @@ const passport = require('passport');
 const db = require('../db');
 const bcrypt = require('bcrypt');
 const authQueries = require('../queries/auth.queries');
+const errorMessages = require('../commons/error_messages');
+const successMessages = require('../commons/success_messages');
 const { JWT_TOKEN } = require('../config');
+const { SqlError } = require('mariadb');
 
 const generateToken = id => {
   const payload = {
@@ -15,6 +18,7 @@ const generateToken = id => {
 };
 
 const sendgrid = require('../services/sendgrid.service');
+const success_messages = require('../commons/success_messages');
 
 module.exports = {
   // Local
@@ -22,10 +26,13 @@ module.exports = {
     await passport.authenticate('local', (err, user) => {
       if (err) return next(err);
       if (!user) {
-        return res.status(401).send('Invalid email or password');
+        return res.status(401).send(errorMessages.NOT_FOUND);
       } else {
         const token = generateToken(user.email);
-        res.status(200).json({ token: token });
+        res.status(200).json({
+          ...success_messages.AUTH_SUCCESS,
+          token: token,
+        });
       }
     })(req, res, next);
   },
@@ -36,25 +43,34 @@ module.exports = {
     const name = req.body.name || '';
 
     if (!email || !password || !name) {
-      return res.status(400).send('Bad Request');
+      return res.status(400).send(errorMessages.MISSING_FIELD);
     }
 
     const sql = authQueries.CREATE_PROFILE_BY_EMAIL;
     const values = [email, password, name];
 
     try {
-      const results = await db.query(sql, values);
-      if (results.affectedRows === 0) return res.status(404).send('Id Not Found');
+      await db.query(sql, values);
 
       const token = generateToken(email);
-      res.status(200).json({ token: token });
+
+      res.status(200).json({
+        ...successMessages.AUTH_SUCCESS,
+        token: token,
+      });
+
       sendgrid.smSignUp(email);
     } catch (error) {
-      if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
-        res.status(400).send('EmailId Already Exist');
+      if (error instanceof SqlError) {
+        if (error.sqlState === '23000' || error.code === 'ER_DUP_ENTRY') {
+          res.status(409).send(errorMessages.DUPLICATE_FIELD);
+        } else {
+          console.error(error);
+          res.status(500).send(errorMessages.DATABASE_FAILURE);
+        }
       } else {
         console.error(error);
-        res.status(500).send('Something Went Wrong');
+        res.status(500).send(errorMessages.SYSTEM_FAILURE);
       }
     }
   },
@@ -66,12 +82,10 @@ module.exports = {
     const values = [email];
 
     if (!email) {
-      return res.status(400).send('Bad Request');
+      return res.status(400).send(errorMessages.MISSING_FIELD);
     }
     try {
       const results = await db.query(sql, values);
-      console.log();
-      if (results.length === 0) return res.status(404).send('Id Not Found');
 
       const payload = {
         email,
@@ -82,22 +96,28 @@ module.exports = {
       const token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
       const uri = `/auth/reset/?token=${token}`;
 
-      res.status(200).send('Reset Password Email Sent');
       await sendgrid.smResetPassword(email, name, uri);
+      res.status(200).send(successMessages.AUTH_PSWD_SENT);
     } catch (error) {
       console.error(error);
-      res.status(500).send('Something Went Wrong');
+      if (error instanceof SqlError) {
+        res.status(500).send(errorMessages.DATABASE_FAILURE);
+      } else {
+        res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      }
     }
   },
 
   resetPassword: (req, res) => {
-    passport.authenticate('reset-password', { session: false }, async (err, data) => {
-      if (err) {
-        return res.status(201).json({ error: err });
-      }
-      res.status(200).send('Password Reset Successfully');
-      await sendgrid.smResetPasswordSuccess(data.email, data.name);
-    })(req, res);
+    try {
+      passport.authenticate('reset-password', { session: false }, async (err, data) => {
+        if (err) {
+          return res.status(201).json({ error: err });
+        }
+        res.status(200).send(successMessages.AUTH_PSWD_RST);
+        await sendgrid.smResetPasswordSuccess(data.email, data.name);
+      })(req, res);
+    } catch (error) {}
   },
 
   // Google
@@ -113,10 +133,13 @@ module.exports = {
       }
 
       const token = generateToken(id);
-      return res.status(200).json({ token });
+      return res.status(200).json({
+        ...successMessages.AUTH_SUCCESS,
+        token,
+      });
     } catch (error) {
       console.error(error);
-      return res.status(400).json({ error });
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
   },
 
@@ -133,10 +156,14 @@ module.exports = {
       }
 
       const token = generateToken(id);
-      return res.status(200).json({ token });
+
+      return res.status(200).json({
+        ...successMessages.AUTH_SUCCESS,
+        token,
+      });
     } catch (error) {
       console.error(error);
-      return res.status(400).json({ error });
+      res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
   },
 };

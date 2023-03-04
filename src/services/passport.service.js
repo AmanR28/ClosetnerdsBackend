@@ -46,7 +46,7 @@ passport.use(
     },
     async (email, password, next) => {
       try {
-        const sql = authQueries.GET_USER;
+        const sql = authQueries.GET_USER_BY_EMAIL;
         const results = await db.query(sql, email);
         if (results.length === 0) return next(undefined, false);
 
@@ -76,7 +76,8 @@ passport.use(
         const email = token.email;
         const password = await bcrypt.hash(req.body.password, 10);
         if (!token.type === 'reset' || !email || !password) {
-          return next('Bad Request', false);
+          // return next('Bad Request', false);
+          throw Error('Invalid token');
         }
         if (new Date(token.expiry).getTime() < Date.now()) return next('Invalid Token', false);
 
