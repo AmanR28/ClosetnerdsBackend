@@ -5,12 +5,15 @@ ENV = process.env.NODE_ENV || 'local';
 let GC_CALLBACK, FB_CALLBACK;
 
 if (ENV === 'production') {
-  GC_CALLBACK = 'https://closetnerds.in/auth/google/callback';
-  FB_CALLBACK = 'https://closetnerds.in/auth/facebook/callback';
+  console.log('Running In Production');
+  GC_CALLBACK = 'https://closetnerds.in/api/auth/google/callback';
+  FB_CALLBACK = 'https://closetnerds.in/api/auth/facebook/callback';
 } else if (ENV === 'development') {
-  GC_CALLBACK = 'https://development.closetnerds.in/auth/google/callback';
-  FB_CALLBACK = 'https://development.closetnerds.in/auth/facebook/callback';
+  console.log('Running In Development');
+  GC_CALLBACK = 'https://development.closetnerds.in/api/auth/google/callback';
+  FB_CALLBACK = 'https://development.closetnerds.in/api/auth/facebook/callback';
 } else {
+  console.log('Running In Local');
   GC_CALLBACK = 'http://localhost:3000/auth/google/callback';
   FB_CALLBACK = 'http://localhost:3000/auth/facebook/callback';
 }
