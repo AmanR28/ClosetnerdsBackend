@@ -4,7 +4,7 @@ const profileRoute = require('./routes/profile.route');
 const authRoute = require('./routes/auth.route');
 const { port } = require('./config');
 const passport = require('passport');
-const { sequelize, User, Profile } = require('./db2');
+const { sequelize, User, Profile } = require('./db');
 const hooks = require('./models/hooks');
 
 const cors = require('cors');
@@ -21,15 +21,6 @@ sequelize
   .catch(error => {
     console.error('Sequelize Failed: ', error);
   });
-
-// sequelize
-//   .sync({ alter: true })
-//   .then(async () => {
-//     console.log('Sync Success!');
-//   })
-//   .catch(error => {
-//     console.error('Sync Failed ', error);
-//   });
 
 app.use(express.json());
 app.use(

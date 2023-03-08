@@ -3,11 +3,11 @@ const passportJwt = require('passport-jwt');
 const passportLocal = require('passport-local');
 const GoogleStrategy = require('passport-google-oauth20');
 const FacebookStrategy = require('passport-facebook');
-const bcrypt = require('bcrypt');
-const db = require('../db');
-const { User } = require('../db2');
+// const bcrypt = require('bcrypt');
+// const db = require('../db');
+const { User } = require('../db');
 const { JWT_TOKEN, google, facebook } = require('../config');
-const authQueries = require('../queries/auth.queries');
+// const authQueries = require('../queries/auth.queries');
 const errorMessages = require('../commons/error_messages');
 
 const LocalStrategy = passportLocal.Strategy;
@@ -69,43 +69,43 @@ passport.use(
   )
 );
 
-passport.use(
-  'reset-password',
-  new JwtStrategy(
-    {
-      jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
-      secretOrKey: JWT_TOKEN.SECRET_KEY,
-      passReqToCallback: true,
-    },
-    async (req, token, next) => {
-      try {
-        const email = token.email;
-        const password = await bcrypt.hash(req.body.password, 10);
-        if (!token.type === 'reset' || !email || !password) {
-          // return next('Bad Request', false);
-          throw Error('Invalid token');
-        }
-        if (new Date(token.expiry).getTime() < Date.now()) return next('Invalid Token', false);
+// passport.use(
+//   'reset-password',
+//   new JwtStrategy(
+//     {
+//       jwtFromRequest: ExtractJwt.fromUrlQueryParameter('token'),
+//       secretOrKey: JWT_TOKEN.SECRET_KEY,
+//       passReqToCallback: true,
+//     },
+//     async (req, token, next) => {
+//       try {
+//         const email = token.email;
+//         const password = await bcrypt.hash(req.body.password, 10);
+//         if (!token.type === 'reset' || !email || !password) {
+//           // return next('Bad Request', false);
+//           throw Error('Invalid token');
+//         }
+//         if (new Date(token.expiry).getTime() < Date.now()) return next('Invalid Token', false);
 
-        const user = await db.query(authQueries.GET_USER, [email]);
+//         const user = await db.query(authQueries.GET_USER, [email]);
 
-        if (user.length === 0) return next('INVALID USER', false);
+//         if (user.length === 0) return next('INVALID USER', false);
 
-        const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
+//         const result = await db.query(authQueries.UPDATE_PASSWORD, [password, email]);
 
-        if (result.affectedRows === 0) return next('SOMETHING WENT WRONG', false);
+//         if (result.affectedRows === 0) return next('SOMETHING WENT WRONG', false);
 
-        return next(undefined, {
-          email: email,
-          name: user[0].name,
-        });
-      } catch (err) {
-        console.error(err);
-        return next('SOMETHING WENT WRONG', false);
-      }
-    }
-  )
-);
+//         return next(undefined, {
+//           email: email,
+//           name: user[0].name,
+//         });
+//       } catch (err) {
+//         console.error(err);
+//         return next('SOMETHING WENT WRONG', false);
+//       }
+//     }
+//   )
+// );
 
 // Google OAuth
 passport.use(

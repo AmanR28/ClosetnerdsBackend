@@ -1,15 +1,15 @@
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { ValidationError, DatabaseError } = require('sequelize');
-const db = require('../db');
-const { sequelize, User } = require('../db2');
-const bcrypt = require('bcrypt');
-const authQueries = require('../queries/auth.queries');
+// const db = require('../db');
+const { sequelize, User } = require('../db');
+// const bcrypt = require('bcrypt');
+// const authQueries = require('../queries/auth.queries');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
 const { JWT_TOKEN } = require('../config');
-const { SqlError } = require('mariadb');
-const sendgrid = require('../services/sendgrid.service');
+// const { SqlError } = require('mariadb');
+// const sendgrid = require('../services/sendgrid.service');
 const success_messages = require('../commons/success_messages');
 const error_messages = require('../commons/error_messages');
 
@@ -121,50 +121,50 @@ module.exports = {
     }
   },
 
-  recoverPassword: async (req, res) => {
-    const email = req.body.email;
+  // recoverPassword: async (req, res) => {
+  //   const email = req.body.email;
 
-    const sql = authQueries.GET_USER;
-    const values = [email];
+  //   const sql = authQueries.GET_USER;
+  //   const values = [email];
 
-    if (!email) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-    try {
-      const results = await db.query(sql, values);
+  //   if (!email) {
+  //     return res.status(400).send(errorMessages.MISSING_FIELD);
+  //   }
+  //   try {
+  //     const results = await db.query(sql, values);
 
-      const payload = {
-        email,
-        type: 'reset',
-        expiry: Date.now() + JWT_TOKEN.EXPIRE_TIME,
-      };
-      const name = results[0].name;
-      const token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
-      const uri = `/auth/reset/?token=${token}`;
+  //     const payload = {
+  //       email,
+  //       type: 'reset',
+  //       expiry: Date.now() + JWT_TOKEN.EXPIRE_TIME,
+  //     };
+  //     const name = results[0].name;
+  //     const token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
+  //     const uri = `/auth/reset/?token=${token}`;
 
-      await sendgrid.smResetPassword(email, name, uri);
-      res.status(200).send(successMessages.AUTH_PSWD_SENT);
-    } catch (error) {
-      console.error(error);
-      if (error instanceof SqlError) {
-        res.status(500).send(errorMessages.DATABASE_FAILURE);
-      } else {
-        res.status(500).send(errorMessages.SYSTEM_FAILURE);
-      }
-    }
-  },
+  //     await sendgrid.smResetPassword(email, name, uri);
+  //     res.status(200).send(successMessages.AUTH_PSWD_SENT);
+  //   } catch (error) {
+  //     console.error(error);
+  //     if (error instanceof SqlError) {
+  //       res.status(500).send(errorMessages.DATABASE_FAILURE);
+  //     } else {
+  //       res.status(500).send(errorMessages.SYSTEM_FAILURE);
+  //     }
+  //   }
+  // },
 
-  resetPassword: (req, res) => {
-    try {
-      passport.authenticate('reset-password', { session: false }, async (err, data) => {
-        if (err) {
-          return res.status(201).json({ error: err });
-        }
-        res.status(200).send(successMessages.AUTH_PSWD_RST);
-        await sendgrid.smResetPasswordSuccess(data.email, data.name);
-      })(req, res);
-    } catch (error) {}
-  },
+  // resetPassword: (req, res) => {
+  //   try {
+  //     passport.authenticate('reset-password', { session: false }, async (err, data) => {
+  //       if (err) {
+  //         return res.status(201).json({ error: err });
+  //       }
+  //       res.status(200).send(successMessages.AUTH_PSWD_RST);
+  //       await sendgrid.smResetPasswordSuccess(data.email, data.name);
+  //     })(req, res);
+  //   } catch (error) {}
+  // },
 
   // Google
   googleAuth: async (req, res) => {

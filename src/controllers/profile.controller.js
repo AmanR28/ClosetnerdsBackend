@@ -1,7 +1,7 @@
-const db = require('../db');
-const { User, Profile } = require('../db2');
+// const db = require('../db');
+const { User, Profile } = require('../db');
 const { ValidationError, DatabaseError, col } = require('sequelize');
-const profileQueries = require('../queries/profile.queries');
+// const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
 const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');

@@ -1,4 +1,4 @@
-const { User, Profile } = require('../db2');
+const { User, Profile } = require('../db');
 const sendgrid = require('../services/sendgrid.service');
 
 const hooks = {
