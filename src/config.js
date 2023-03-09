@@ -57,4 +57,8 @@ module.exports = {
     CLIENT_SECRET: process.env.FB_CLIENT_SECRET,
     CALLBACK: FB_CALLBACK,
   },
+
+  MULTER: {
+    UPLOAD_PATH: process.env.UPLOAD_PATH,
+  },
 };

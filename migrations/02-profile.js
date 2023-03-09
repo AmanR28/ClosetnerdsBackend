@@ -1,6 +1,6 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('profs', {
+    await queryInterface.createTable('profiles', {
       id: {
         type: Sequelize.UUID,
         primaryKey: true,
@@ -26,8 +26,11 @@ module.exports = {
       prices: {
         type: Sequelize.JSON,
       },
+      colors: {
+        type: Sequelize.JSON,
+      },
       type: {
-        type: Sequelize.ENUM(['Triangle', 'Inverted', 'Hourglass', 'Rectangle']),
+        type: Sequelize.STRING,
       },
       brands: {
         type: Sequelize.TEXT,
@@ -44,6 +47,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('profs');
+    await queryInterface.dropTable('profiles');
   },
 };

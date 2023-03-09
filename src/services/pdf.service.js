@@ -18,8 +18,6 @@ module.exports = {
       ],
     });
 
-    pdfDoc.save('new.pdf');
-
     return pdfDoc;
   },
 };

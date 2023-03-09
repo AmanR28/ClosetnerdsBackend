@@ -367,9 +367,9 @@ exports.updateColors = async (req, res) => {
 
 exports.updateType = async (req, res) => {
   const email = req.body.email;
-  const type = req.body.type || '';
+  const type = req.body.type;
 
-  if (!email) {
+  if (!email || !type) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
@@ -390,7 +390,7 @@ exports.updateType = async (req, res) => {
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
 
-    profile.type = profile.type;
+    profile.type = type;
     await profile.validate();
     await profile.save();
 
@@ -539,9 +539,9 @@ exports.updateSkin = async (req, res) => {
 
 exports.updatePicture = async (req, res) => {
   const email = req.body.email;
-  const picture = req.body.picture || '';
+  const picture = req.body.picture;
 
-  if (!email) {
+  if (!email || !picture) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
   try {
@@ -562,7 +562,9 @@ exports.updatePicture = async (req, res) => {
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
 
-    profile.picture = picture;
+    console.log('asdf', picture);
+
+    profile.pictures = picture;
     await profile.validate();
     await profile.save();
 

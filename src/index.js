@@ -32,7 +32,6 @@ app.use(
 app.use(passport.initialize());
 require('./services/passport.service');
 
-const getUser = require('./middleware/getUser');
 app.get('/', (req, res) => res.send('hi'));
 app.use('/profile', profileRoute);
 app.use('/auth', authRoute);

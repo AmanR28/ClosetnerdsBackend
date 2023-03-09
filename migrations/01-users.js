@@ -1,6 +1,6 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('usrs', {
+    await queryInterface.createTable('users', {
       id: {
         type: Sequelize.UUID,
         primaryKey: true,
@@ -18,7 +18,7 @@ module.exports = {
       },
 
       role: {
-        type: Sequelize.ENUM('client', 'admin'),
+        type: Sequelize.STRING,
         allowNull: false,
         defaultValue: 'client',
       },
@@ -32,15 +32,6 @@ module.exports = {
       email: {
         type: Sequelize.STRING,
         unique: true,
-        validate: {
-          isEmail: true,
-          async isUnique(email) {
-            const user = await User.findOne({ where: { email } });
-            if (user) {
-              throw new Error('Validation isUnique on email failed');
-            }
-          },
-        },
       },
       emailVerified: {
         type: Sequelize.BOOLEAN,
@@ -60,12 +51,6 @@ module.exports = {
 
       phone: {
         type: Sequelize.STRING(20),
-        async isUnique(email) {
-          const user = await User.findOne({ where: { email } });
-          if (user) {
-            throw new Error('Validation isUnique on phone failed');
-          }
-        },
       },
       phoneVerified: {
         type: Sequelize.BOOLEAN,
@@ -101,6 +86,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('usrs');
+    await queryInterface.dropTable('users');
   },
 };

@@ -1,5 +1,4 @@
 const { Sequelize, Model } = require('sequelize');
-const bcrypt = require('bcrypt');
 
 module.exports = sequelize => {
   class Profile extends Model {}
@@ -31,8 +30,24 @@ module.exports = sequelize => {
       prices: {
         type: Sequelize.JSON,
       },
+      colors: {
+        type: Sequelize.JSON,
+      },
       type: {
-        type: Sequelize.ENUM(['Triangle', 'Inverted', 'Hourglass', 'Rectangle']),
+        type: Sequelize.STRING,
+        validate: {
+          isValid(type) {
+            const r = ['Triangle', 'Inverted', 'Hourglass', 'Rectangle', 'Diamond', 'Rounded'].includes(type)
+              ? true
+              : false;
+
+            console.log(type, r);
+
+            if (!r) {
+              throw new Error('Validation valid on type failed');
+            }
+          },
+        },
       },
       brands: {
         type: Sequelize.TEXT,
@@ -49,7 +64,7 @@ module.exports = sequelize => {
     },
     {
       sequelize,
-      modelName: 'profs',
+      modelName: 'profiles',
       timestamps: false,
     }
   );

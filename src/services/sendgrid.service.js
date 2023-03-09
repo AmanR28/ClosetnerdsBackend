@@ -5,7 +5,6 @@ sgMail.setApiKey(sendgrid.API_KEY);
 
 const sendMail = async message => {
   try {
-    console.log('SG MSG', JSON.stringify(message));
     await sgMail.send(message);
   } catch (error) {
     console.error('Error Sending Mail', error);

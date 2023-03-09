@@ -30,9 +30,14 @@ module.exports = sequelize => {
       },
 
       role: {
-        type: Sequelize.ENUM('client', 'admin'),
+        type: Sequelize.STRING,
         allowNull: false,
         defaultValue: 'client',
+        validate: {
+          isValid(type) {
+            return type in ['client', 'admin'] ? true : false;
+          },
+        },
       },
 
       isRegistered: {
@@ -113,7 +118,7 @@ module.exports = sequelize => {
     },
     {
       sequelize,
-      modelName: 'usr',
+      modelName: 'users',
       timestamps: false,
     }
   );
