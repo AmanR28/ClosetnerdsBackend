@@ -1,25 +1,32 @@
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { ValidationError, DatabaseError } = require('sequelize');
-// const db = require('../db');
 const { sequelize, User } = require('../db');
-// const bcrypt = require('bcrypt');
-// const authQueries = require('../queries/auth.queries');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
-const { JWT_TOKEN } = require('../config');
-// const { SqlError } = require('mariadb');
-// const sendgrid = require('../services/sendgrid.service');
+const { BASE_URI, JWT_TOKEN, sendgrid } = require('../config');
+const constants = require('../commons/constants');
 const success_messages = require('../commons/success_messages');
 const error_messages = require('../commons/error_messages');
+const sendgridService = require('../services/sendgrid.service');
 
-const generateToken = id => {
+const generateToken = (id, type = constants.TOKEN.TYPE_AUTH) => {
   const payload = {
     id,
+    type,
     expiry: new Date(Date.now() + JWT_TOKEN.EXPIRE_TIME),
   };
   let token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
   return token;
+};
+
+const sendVerificationToken = user => {
+  const token = generateToken(user.id, constants.TOKEN.TYPE_VALIDATE);
+  console.log('Validity Token', token);
+
+  const uri = BASE_URI + 'auth/validate?token=' + token;
+
+  sendgridService.smProfileValidate(user.email, user.name, uri);
 };
 
 module.exports = {
@@ -72,6 +79,13 @@ module.exports = {
 
       if (user) {
         if (user.isPasswordAuth) {
+          if (!user.emailVerified) {
+            sendVerificationToken(user);
+            return res.status(409).send({
+              ...errorMessages.DUPLICATE_FIELD,
+              message: 'Email Verification Mail Sent',
+            });
+          }
           return res.status(409).send(errorMessages.DUPLICATE_FIELD);
         }
       }
@@ -93,11 +107,9 @@ module.exports = {
 
       await user.save();
 
-      const token = generateToken(user.id);
-
       return res.status(200).json({
-        ...successMessages.AUTH_SUCCESS,
-        token: token,
+        ...successMessages.PROFILE_CREATED,
+        message: 'Email Verification Mail Sent',
       });
     } catch (e) {
       if (e instanceof ValidationError) {
@@ -118,6 +130,49 @@ module.exports = {
 
       console.error(e);
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
+  },
+
+  validate: async (req, res) => {
+    try {
+      const rawToken = req.query.token;
+
+      if (!rawToken) {
+        return res.status(400).send(errorMessages.MISSING_FIELD);
+      }
+
+      const token = jwt.decode(rawToken);
+
+      if (new Date(token.expiry).getTime() < Date.now()) {
+        return res.status(400).send(errorMessages.TOKEN_EXPIRED);
+      }
+
+      if (token.type !== constants.TOKEN.TYPE_VALIDATE) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
+      const user = await User.findOne({ where: { id: token.id } });
+
+      if (!user) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
+      if (user.emailVerified) {
+        return res.status(409).send(errorMessages.ALREADY_VERIFIED);
+      }
+
+      user.emailVerified = true;
+      user.save();
+
+      res.status(200).send(successMessages.EMAIL_VERIFIED);
+      sendgridService.smSignUp(user.email, user.name);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof DatabaseError) {
+        res.status(500).send(errorMessages.DATABASE_FAILURE);
+      } else {
+        res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      }
     }
   },
 

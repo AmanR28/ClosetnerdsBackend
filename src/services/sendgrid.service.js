@@ -6,6 +6,7 @@ sgMail.setApiKey(sendgrid.API_KEY);
 const sendMail = async message => {
   try {
     await sgMail.send(message);
+    console.log(JSON.stringify(message));
   } catch (error) {
     console.error('Error Sending Mail', error);
   }
@@ -41,6 +42,25 @@ module.exports = {
           },
           dynamic_template_data: {
             username,
+          },
+        },
+      ],
+    };
+    await sendMail(message);
+  },
+
+  smProfileValidate: async (email, username, uri) => {
+    let message = {
+      from: sendgrid.SENDER_EMAIL,
+      template_id: template.email_verification,
+      personalizations: [
+        {
+          to: {
+            email,
+          },
+          dynamic_template_data: {
+            username,
+            uri,
           },
         },
       ],

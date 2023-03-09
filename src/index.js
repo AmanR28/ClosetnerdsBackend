@@ -14,8 +14,6 @@ sequelize
   .authenticate()
   .then(() => {
     User.addHook('beforeCreate', hooks.User.beforeCreate);
-    User.addHook('afterCreate', hooks.User.afterCreate);
-
     console.log('Sequelize Connected.');
   })
   .catch(error => {

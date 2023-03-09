@@ -4,6 +4,7 @@ const getJwtUser = require('../middleware/getJwtUser');
 const profileController = require('../controllers/profile.controller');
 
 router.get('/', getJwtUser, profileController.getProfile);
+
 router.post('/', getJwtUser, profileController.createProfile);
 router.post('/measures', getJwtUser, profileController.updateMeasures);
 router.post('/wears', getJwtUser, profileController.updateWears);

@@ -28,4 +28,9 @@ module.exports = {
     state: 'Success',
     code: 'AUTH_PSWD_RST',
   },
+
+  EMAIL_VERIFIED: {
+    state: 'Success',
+    code: 'EMAIL_VERIFIED',
+  },
 };

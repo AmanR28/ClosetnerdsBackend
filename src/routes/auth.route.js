@@ -4,6 +4,7 @@ const passport = require('passport');
 
 router.post('/login', authController.login);
 router.post('/signup', authController.signup);
+router.get('/validate', authController.validate);
 // router.get('/reset', authController.recoverPassword);
 // router.post('/reset', authController.resetPassword);
 

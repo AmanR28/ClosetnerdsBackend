@@ -9,9 +9,6 @@ const hooks = {
       });
       user.profileId = profile.id;
     },
-    afterCreate: (user, options) => {
-      sendgrid.smSignUp(user.email);
-    },
   },
 };
 

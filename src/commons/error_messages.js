@@ -32,6 +32,11 @@ module.exports = {
     code: 'DUPLICATE_FIELD',
   },
 
+  ALREADY_VERIFIED: {
+    state: 'Failure',
+    code: 'ALREADY_VERIFIED',
+  },
+
   // Not Found : 404
   NOT_FOUND: {
     state: 'Failure',

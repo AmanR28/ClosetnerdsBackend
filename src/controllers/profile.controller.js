@@ -1,12 +1,10 @@
-// const db = require('../db');
 const { User, Profile } = require('../db');
 const { ValidationError, DatabaseError, col } = require('sequelize');
-// const profileQueries = require('../queries/profile.queries');
 const sendgrid = require('../services/sendgrid.service');
 const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
-/*  */
+
 const sendProfileCompleteMail = async email => {
   try {
     const user = await User.findOne({ where: { email: email } });
@@ -121,7 +119,9 @@ exports.createProfile = async (req, res) => {
       });
     }
 
-    return res.status(200).json(successMessages.PROFILE_CREATED);
+    res.status(200).json(successMessages.PROFILE_CREATED);
+
+    sendgrid.smProfileRegister(user.email);
   } catch (e) {
     if (e instanceof ValidationError) {
       if (e.errors[0].message == 'Validation isEmail on email failed') {

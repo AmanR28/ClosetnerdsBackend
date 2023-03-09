@@ -3,11 +3,9 @@ const passportJwt = require('passport-jwt');
 const passportLocal = require('passport-local');
 const GoogleStrategy = require('passport-google-oauth20');
 const FacebookStrategy = require('passport-facebook');
-// const bcrypt = require('bcrypt');
-// const db = require('../db');
 const { User } = require('../db');
-const { JWT_TOKEN, google, facebook } = require('../config');
-// const authQueries = require('../queries/auth.queries');
+const { JWT_TOKEN, GOOGLE, FACEBOOK } = require('../config');
+const constants = require('../commons/constants');
 const errorMessages = require('../commons/error_messages');
 
 const LocalStrategy = passportLocal.Strategy;
@@ -27,6 +25,10 @@ passport.use(
     async (req, jwtToken, next) => {
       if (new Date(jwtToken.expiry).getTime() < Date.now()) {
         return next(errorMessages.TOKEN_EXPIRED);
+      }
+
+      if (jwtToken.type !== constants.TOKEN.TYPE_AUTH) {
+        return next(errorMessages.INVALID_TOKEN);
       }
 
       const user = await User.findOne({ where: { id: jwtToken.id } });
@@ -112,9 +114,9 @@ passport.use(
   'google',
   new GoogleStrategy(
     {
-      clientID: google.CLIENT_ID,
-      clientSecret: google.CLIENT_SECRET,
-      callbackURL: google.CALLBACK,
+      clientID: GOOGLE.CLIENT_ID,
+      clientSecret: GOOGLE.CLIENT_SECRET,
+      callbackURL: GOOGLE.CALLBACK,
     },
     function verify(accessToken, rf, tokens, profile, cb) {
       const user = {
@@ -134,9 +136,9 @@ passport.use(
   'facebook',
   new FacebookStrategy(
     {
-      clientID: facebook.CLIENT_ID,
-      clientSecret: facebook.CLIENT_SECRET,
-      callbackURL: facebook.CALLBACK,
+      clientID: FACEBOOK.CLIENT_ID,
+      clientSecret: FACEBOOK.CLIENT_SECRET,
+      callbackURL: FACEBOOK.CALLBACK,
     },
     function verify(accessToken, refreshToken, profile, cb) {
       console.log(profile);
