@@ -77,6 +77,7 @@ exports.getProfile = async (req, res) => {
         email: user.email,
         phone: user.phone,
         gender: user.gender,
+        city: user.city,
         ...profile.dataValues,
       },
     });
@@ -97,9 +98,10 @@ exports.createProfile = async (req, res) => {
   const email = req.body.email || '';
   const name = req.body.name || '';
   const phone = req.body.phone || 0;
-  const gender = req.body.gender || 'none';
+  const gender = req.body.gender;
+  const city = req.body.city || '';
 
-  if (!email || !name) {
+  if (!email || !name || !gender) {
     return res.status(400).send(errorMessages.MISSING_FIELD);
   }
 
@@ -116,6 +118,7 @@ exports.createProfile = async (req, res) => {
         gender: gender,
         email: email,
         phone: phone,
+        city: city,
       });
     }
 

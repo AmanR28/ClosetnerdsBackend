@@ -16,6 +16,9 @@ module.exports = {
         allowNull: false,
         defaultValue: 'none',
       },
+      city: {
+        type: Sequelize.STRING,
+      },
 
       role: {
         type: Sequelize.STRING,
