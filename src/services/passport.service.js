@@ -23,7 +23,7 @@ passport.use(
       passReqToCallback: true,
     },
     async (req, jwtToken, next) => {
-      if (new Date(jwtToken.expiry).getTime() < Date.now()) {
+      if (!jwtToken.expiry || new Date(jwtToken.expiry).getTime() < Date.now()) {
         return next(errorMessages.TOKEN_EXPIRED);
       }
 

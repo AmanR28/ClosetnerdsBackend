@@ -37,6 +37,11 @@ module.exports = {
     code: 'ALREADY_VERIFIED',
   },
 
+  ALREADY_RESET_PASSWORD: {
+    state: 'Failure',
+    code: 'ALREADY_RESET_PASSWORD',
+  },
+
   // Not Found : 404
   NOT_FOUND: {
     state: 'Failure',

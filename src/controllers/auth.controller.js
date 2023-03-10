@@ -20,13 +20,22 @@ const generateToken = (id, type = constants.TOKEN.TYPE_AUTH) => {
   return token;
 };
 
-const sendVerificationToken = user => {
+const sendVerificationToken = async user => {
   const token = generateToken(user.id, constants.TOKEN.TYPE_VALIDATE);
   console.log('Validity Token', token);
 
   const uri = BASE_URI + 'auth/validate?token=' + token;
 
-  sendgridService.smProfileValidate(user.email, user.name, uri);
+  await sendgridService.smProfileValidate(user.email, user.name, uri);
+};
+
+const sendResetToken = async user => {
+  const token = generateToken(user.id, constants.TOKEN.TYPE_RESET_PSWD);
+  console.log('Reset Password Token', token);
+
+  const uri = BASE_URI + 'auth/reset?token=' + token;
+
+  await sendgridService.smResetPassword(user.email, user.name, uri);
 };
 
 module.exports = {
@@ -143,6 +152,10 @@ module.exports = {
 
       const token = jwt.decode(rawToken);
 
+      if (!token || !token.expiry || !token.type) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
       if (new Date(token.expiry).getTime() < Date.now()) {
         return res.status(400).send(errorMessages.TOKEN_EXPIRED);
       }
@@ -176,50 +189,87 @@ module.exports = {
     }
   },
 
-  // recoverPassword: async (req, res) => {
-  //   const email = req.body.email;
+  recoverPassword: async (req, res) => {
+    try {
+      const email = req.body.email;
 
-  //   const sql = authQueries.GET_USER;
-  //   const values = [email];
+      if (!email) {
+        return res.status(400).send(errorMessages.MISSING_FIELD);
+      }
 
-  //   if (!email) {
-  //     return res.status(400).send(errorMessages.MISSING_FIELD);
-  //   }
-  //   try {
-  //     const results = await db.query(sql, values);
+      const user = await User.findOne({ where: { email: email } });
 
-  //     const payload = {
-  //       email,
-  //       type: 'reset',
-  //       expiry: Date.now() + JWT_TOKEN.EXPIRE_TIME,
-  //     };
-  //     const name = results[0].name;
-  //     const token = jwt.sign(payload, JWT_TOKEN.SECRET_KEY);
-  //     const uri = `/auth/reset/?token=${token}`;
+      if (!user) {
+        return res.status(404).send(errorMessages.NOT_FOUND);
+      }
 
-  //     await sendgrid.smResetPassword(email, name, uri);
-  //     res.status(200).send(successMessages.AUTH_PSWD_SENT);
-  //   } catch (error) {
-  //     console.error(error);
-  //     if (error instanceof SqlError) {
-  //       res.status(500).send(errorMessages.DATABASE_FAILURE);
-  //     } else {
-  //       res.status(500).send(errorMessages.SYSTEM_FAILURE);
-  //     }
-  //   }
-  // },
+      if (!user.isPasswordAuth) {
+        return res.status(401).send(errorMessages.NOT_REGISTERED);
+      }
 
-  // resetPassword: (req, res) => {
-  //   try {
-  //     passport.authenticate('reset-password', { session: false }, async (err, data) => {
-  //       if (err) {
-  //         return res.status(201).json({ error: err });
-  //       }
-  //       res.status(200).send(successMessages.AUTH_PSWD_RST);
-  //       await sendgrid.smResetPasswordSuccess(data.email, data.name);
-  //     })(req, res);
-  //   } catch (error) {}
-  // },
+      user.passwordReset = true;
+      user.save();
+
+      await sendResetToken(user);
+      res.status(200).send(successMessages.AUTH_PSWD_SENT);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof DatabaseError) {
+        res.status(500).send(errorMessages.DATABASE_FAILURE);
+      } else {
+        res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      }
+    }
+  },
+
+  resetPassword: async (req, res) => {
+    try {
+      const rawToken = req.body.token;
+      const password = req.body.password;
+
+      if (!rawToken || !password) {
+        return res.status(400).send(errorMessages.MISSING_FIELD);
+      }
+
+      const token = jwt.decode(rawToken);
+
+      if (!token || !token.expiry || !token.type) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
+      if (token.type !== constants.TOKEN.TYPE_RESET_PSWD) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
+      if (new Date(token.expiry).getTime() < Date.now()) {
+        return res.status(400).send(errorMessages.TOKEN_EXPIRED);
+      }
+
+      const user = await User.findOne({ where: { id: token.id } });
+
+      if (!user) {
+        return res.status(401).send(errorMessages.INVALID_TOKEN);
+      }
+
+      if (!user.passwordReset) {
+        return res.status(409).send(errorMessages.ALREADY_RESET_PASSWORD);
+      }
+
+      user.password = await User.getPassword(password);
+      user.passwordReset = false;
+      user.save();
+
+      res.status(200).send(successMessages.AUTH_PSWD_RST);
+      await sendgridService.smResetPasswordSuccess(user.email, user.name);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof DatabaseError) {
+        res.status(500).send(errorMessages.DATABASE_FAILURE);
+      } else {
+        res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      }
+    }
+  },
 
   // Google
   googleAuth: async (req, res) => {
