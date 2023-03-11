@@ -19,4 +19,20 @@ db.sequelize = sequelize;
 db.User = require('./models/user.model')(sequelize);
 db.Profile = require('./models/profile.model')(sequelize);
 
+db.User.hasOne(db.Profile, {
+  foreignKey: 'userId',
+  onDelete: 'CASCADE',
+});
+db.Profile.belongsTo(db.User);
+
+db.User.addHook('beforeCreate', async (user, options) => {
+  const profile = await db.Profile.create();
+  user.profileId = profile.id;
+});
+
+db.User.addHook('afterCreate', async (user, options) => {
+  const profile = await db.Profile.findByPk(user.profileId);
+  await user.setProfile(profile);
+});
+
 module.exports = db;

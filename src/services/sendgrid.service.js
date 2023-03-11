@@ -1,11 +1,12 @@
 const sgMail = require('@sendgrid/mail');
+const { ENV } = require('../config');
 
 const { sendgrid, template } = require('../config');
 sgMail.setApiKey(sendgrid.API_KEY);
 
 const sendMail = async message => {
   try {
-    await sgMail.send(message);
+    if (ENV != 'local') await sgMail.send(message);
     console.log(JSON.stringify(message));
   } catch (error) {
     console.error('Error Sending Mail', error);

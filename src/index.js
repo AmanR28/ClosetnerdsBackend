@@ -13,7 +13,6 @@ app.use(cors({ origin: '*' }));
 sequelize
   .authenticate()
   .then(() => {
-    User.addHook('beforeCreate', hooks.User.beforeCreate);
     console.log('Sequelize Connected.');
   })
   .catch(error => {
