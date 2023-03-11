@@ -73,4 +73,9 @@ module.exports = {
     state: 'Failure',
     code: 'INVALID_TOKEN',
   },
+
+  TOKEN_EXPIRED: {
+    state: 'Failure',
+    code: 'TOKEN_EXPIRED',
+  },
 };

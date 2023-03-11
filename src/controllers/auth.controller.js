@@ -165,7 +165,7 @@ module.exports = {
       }
 
       if (new Date(token.expiry).getTime() < Date.now()) {
-        return res.status(400).send(errorMessages.TOKEN_EXPIRED);
+        return res.status(401).send(errorMessages.TOKEN_EXPIRED);
       }
 
       if (token.type !== constants.TOKEN.TYPE_VALIDATE) {
