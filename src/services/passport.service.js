@@ -59,6 +59,10 @@ passport.use(
           return next(errorMessages.NOT_REGISTERED);
         }
 
+        if (!user.emailVerified) {
+          return next(errorMessages.NOT_VERIFIED);
+        }
+
         const compare = await user.checkPassword(password);
 
         if (!compare) return next(errorMessages.INVALID_CREDENTIAL);

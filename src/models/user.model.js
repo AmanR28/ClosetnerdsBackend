@@ -24,9 +24,14 @@ module.exports = sequelize => {
         allowNull: false,
       },
       gender: {
-        type: Sequelize.ENUM('male', 'female', 'none'),
+        type: Sequelize.STRING,
         allowNull: false,
         defaultValue: 'none',
+        validate: {
+          isValid(type) {
+            return type in ['male', 'female', 'none'] ? true : false;
+          },
+        },
       },
       city: {
         type: Sequelize.STRING,

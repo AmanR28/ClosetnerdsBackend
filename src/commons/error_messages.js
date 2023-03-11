@@ -59,6 +59,11 @@ module.exports = {
     code: 'NOT_REGISTERED',
   },
 
+  NOT_VERIFIED: {
+    state: 'Failure',
+    code: 'NOT_VERIFIED',
+  },
+
   INVALID_CREDENTIAL: {
     state: 'Failure',
     code: 'INVALID_CREDENTIAL',

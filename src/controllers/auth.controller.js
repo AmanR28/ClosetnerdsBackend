@@ -47,6 +47,10 @@ module.exports = {
           return res.status(404).send(errorMessages.NOT_FOUND);
         }
 
+        if (err == error_messages.NOT_VERIFIED) {
+          return res.status(401).send(errorMessages.NOT_VERIFIED);
+        }
+
         if (err == error_messages.INVALID_CREDENTIAL) {
           return res.status(401).send(errorMessages.INVALID_CREDENTIAL);
         }
@@ -73,11 +77,12 @@ module.exports = {
   },
 
   signup: async (req, res, next) => {
+    const name = req.body.name || '';
     const email = req.body.email;
     const password = req.body.password;
-    const name = req.body.name || '';
     const phone = req.body.phone;
-    const gender = req.body.gender || 'none';
+    const gender = req.body.gender;
+    const city = req.body.city;
 
     if (!name || !email || !password) {
       return res.status(400).send(errorMessages.MISSING_FIELD);
@@ -113,8 +118,10 @@ module.exports = {
 
       user.name = name;
       user.gender = gender;
+      user.city = city;
 
       await user.save();
+      await sendVerificationToken(user);
 
       return res.status(200).json({
         ...successMessages.PROFILE_CREATED,
