@@ -29,7 +29,11 @@ module.exports = sequelize => {
         defaultValue: 'none',
         validate: {
           isValid(type) {
-            return type in ['male', 'female', 'none'] ? true : false;
+            const r = ['male', 'female', 'none'].includes(type) ? true : false;
+
+            if (!r) {
+              throw new Error('Validation isValid on gender failed');
+            }
           },
         },
       },
@@ -43,7 +47,11 @@ module.exports = sequelize => {
         defaultValue: 'client',
         validate: {
           isValid(type) {
-            return type in ['client', 'admin'] ? true : false;
+            const r = ['client', 'admin'].includes(type) ? true : false;
+
+            if (!r) {
+              throw new Error('Validation isValid on type failed');
+            }
           },
         },
       },

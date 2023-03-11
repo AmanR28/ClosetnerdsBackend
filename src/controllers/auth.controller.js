@@ -130,7 +130,7 @@ module.exports = {
     } catch (e) {
       if (e instanceof ValidationError) {
         if (e.errors[0].message == 'Validation isEmail on email failed') {
-          return res.status(409).send(errorMessages.INVALID_EMAIL);
+          return res.status(400).send(errorMessages.INVALID_EMAIL);
         }
         if (e.errors[0].message == 'Validation isUnique on email failed') {
           return res.status(409).send(errorMessages.DUPLICATE_FIELD);
@@ -138,6 +138,7 @@ module.exports = {
         if (e.errors[0].message == 'Validation isUnique on phone failed') {
           return res.status(409).send(errorMessages.DUPLICATE_FIELD);
         }
+        return res.status(400).send(errorMessages.BAD_REQUEST);
       }
       if (e instanceof DatabaseError) {
         console.error(e);

@@ -41,8 +41,6 @@ module.exports = sequelize => {
               ? true
               : false;
 
-            console.log(type, r);
-
             if (!r) {
               throw new Error('Validation valid on type failed');
             }
