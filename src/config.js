@@ -14,7 +14,7 @@ if (ENV === 'production') {
 } else if (ENV === 'development') {
   console.log('Running In Development');
   BASE_URI = 'https://development.closetnerds.in/api/';
-  WEB_URI = 'https://development.closetnerds.in/api/';
+  WEB_URI = 'https://development.closetnerds.in/';
   GC_CALLBACK = 'https://development.closetnerds.in/api/auth/google/callback';
   FB_CALLBACK = 'https://development.closetnerds.in/api/auth/facebook/callback';
 } else {
