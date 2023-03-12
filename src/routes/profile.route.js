@@ -18,6 +18,6 @@ router.post('/type', getUser, getProfile, profileController.updateType);
 router.post('/brands', getUser, getProfile, profileController.updateBrands);
 router.post('/celebrity', getUser, getProfile, profileController.updateCelebrity);
 router.post('/skin', getUser, getProfile, profileController.updateSkin);
-router.post('/picture', upload.profileImage, profileController.updatePicture);
+router.post('/picture', upload.profileImage, getUser, getProfile, profileController.updatePicture);
 
 module.exports = router;

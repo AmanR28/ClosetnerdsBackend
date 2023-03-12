@@ -363,31 +363,19 @@ exports.updateSkin = async (req, res) => {
 };
 
 exports.updatePicture = async (req, res) => {
-  const email = req.body.email;
-  const picture = req.body.picture;
-
-  if (!email || !picture) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
+    const picture = req.body.picture;
 
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
+    if (!picture) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
     }
 
-    const profile = await Profile.findByPk(user.profileId);
+    const profile = req.profile;
 
     if (!profile) {
       console.error('Profile Not Associated with user ', user.id);
       return res.status(500).send(errorMessages.SYSTEM_FAILURE);
     }
-
-    console.log('asdf', picture);
 
     profile.pictures = picture;
     await profile.validate();
@@ -395,7 +383,7 @@ exports.updatePicture = async (req, res) => {
 
     res.status(200).send(successMessages.PROFILE_UPDATED);
 
-    sendProfileCompleteMail(email);
+    sendProfileCompleteMail(req.body.email);
   } catch (error) {
     if (error instanceof ValidationError) {
       return res.status(400).send(errorMessages.BAD_REQUEST);
