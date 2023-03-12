@@ -41,39 +41,42 @@ const sendResetToken = async user => {
 module.exports = {
   // Local
   login: async (req, res) => {
-    await passport.authenticate('local', (err, user) => {
-      if (err) {
-        if (err == error_messages.NOT_FOUND) {
-          return res.status(404).send(errorMessages.NOT_FOUND);
-        }
+    try {
+      const email = req.body.email;
+      const password = req.body.password;
 
-        if (err == error_messages.NOT_VERIFIED) {
-          return res.status(401).send(errorMessages.NOT_VERIFIED);
-        }
-
-        if (err == error_messages.INVALID_CREDENTIAL) {
-          return res.status(401).send(errorMessages.INVALID_CREDENTIAL);
-        }
-
-        if (err == error_messages.NOT_REGISTERED) {
-          return res.status(401).send(errorMessages.NOT_REGISTERED);
-        }
-
-        if (err instanceof DatabaseError) {
-          console.error(err);
-          return res.status(500).send(errorMessages.DATABASE_FAILURE);
-        }
-
-        console.error(err);
-        return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+      if (!email || !password) {
+        return res.status(400).send(errorMessages.MISSING_FIELD);
       }
+
+      const user = await User.findOne({ where: { email: email } });
+
+      if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
+
+      if (!user.isRegistered || !user.isPasswordAuth) {
+        return res.status(401).send(errorMessages.NOT_REGISTERED);
+      }
+
+      if (!user.emailVerified) {
+        return res.status(401).send(errorMessages.NOT_VERIFIED);
+      }
+
+      const compare = await user.checkPassword(password);
+
+      if (!compare) return res.status(401).send(errorMessages.INVALID_CREDENTIAL);
 
       const token = generateToken(user.id);
       res.status(200).json({
         ...success_messages.AUTH_SUCCESS,
         token: token,
       });
-    })(req, res);
+    } catch (err) {
+      console.error(err);
+      if (err instanceof DatabaseError) {
+        return res.status(500).send(errorMessages.DATABASE_FAILURE);
+      }
+      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+    }
   },
 
   signup: async (req, res, next) => {
