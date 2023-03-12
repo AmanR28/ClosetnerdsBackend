@@ -7,18 +7,8 @@ const successMessages = require('../commons/success_messages');
 
 const sendProfileCompleteMail = async email => {
   try {
-    const user = await User.findOne({ where: { email: email } });
-
-    if (!user) {
-      return res.status(404).send(errorMessages.NOT_FOUND);
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const user = req.user;
+    const profile = req.profile;
 
     delete profile.dataValues.id;
     delete profile.dataValues.userId;
@@ -34,64 +24,32 @@ const sendProfileCompleteMail = async email => {
     };
 
     const pdfDoc = pdfService.profilePdf(data);
-    sendgrid.smProfilePDF(data.email, data.name, Buffer.from(pdfDoc.output('arraybuffer')));
+    await sendgrid.smProfilePDF(data.email, data.name, Buffer.from(pdfDoc.output('arraybuffer')));
   } catch (error) {
     console.error(error);
   }
 };
 
 exports.getProfile = async (req, res) => {
-  if (!req.body.email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
-  try {
-    const user = await User.findOne({ where: { email: req.body.email } });
+  const user = req.user;
+  const profile = req.profile;
 
-    if (!user) {
-      return res.status(404).send(errorMessages.NOT_FOUND);
-    }
+  delete profile.dataValues.id;
+  delete profile.dataValues.userId;
+  delete profile.dataValues.createdAt;
+  delete profile.dataValues.updatedAt;
 
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
-
-    delete profile.dataValues.id;
-    delete profile.dataValues.userId;
-    delete profile.dataValues.createdAt;
-    delete profile.dataValues.updatedAt;
-
-    res.status(200).send({
-      ...successMessages.PROFILE_INFO,
-      data: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        gender: user.gender,
-        city: user.city,
-        ...profile.dataValues,
-      },
-    });
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
-  }
+  res.status(200).send({
+    ...successMessages.PROFILE_INFO,
+    data: {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      gender: user.gender,
+      city: user.city,
+      ...profile.dataValues,
+    },
+  });
 };
 
 exports.createProfile = async (req, res) => {
@@ -149,273 +107,131 @@ exports.createProfile = async (req, res) => {
 };
 
 exports.updateMeasures = async (req, res) => {
-  try {
-    const measures = {
-      bust: req.body.bust || 0,
-      waist: req.body.waist || 0,
-      hip: req.body.hip || 0,
-      length: req.body.length || 0,
-    };
+  const measures = {
+    bust: req.body.bust || 0,
+    waist: req.body.waist || 0,
+    hip: req.body.hip || 0,
+    length: req.body.length || 0,
+  };
 
-    const profile = req.profile;
+  const profile = req.profile;
 
-    profile.measures = measures;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      return res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
-  }
+  const result = await profile.update({ measures });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateWears = async (req, res) => {
-  try {
-    const wears = req.body.wears || {};
-    const subs = req.body.subs || {};
+  const wears = req.body.wears || {};
+  const subs = req.body.subs || {};
 
-    const profile = req.profile;
+  const profile = req.profile;
 
-    profile.wears = wears;
-    profile.subs = subs;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
-  }
+  const result = await profile.update({ wears, subs });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateOccasions = async (req, res) => {
-  try {
-    const occasions = req.body.occasions;
-    if (!occasions) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.occasions = occasions;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const occasions = req.body.occasions;
+  if (!occasions) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ occasions });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updatePrices = async (req, res) => {
-  try {
-    const prices = req.body.prices;
-    if (!prices) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.prices = prices;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      return res.status(500).send(errorMessages.DATABASE_FAILURE);
-    }
-    return res.status(500).send(errorMessages.SYSTEM_FAILURE);
+  const prices = req.body.prices;
+  if (!prices) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ prices });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateColors = async (req, res) => {
-  try {
-    const colors = req.body.colors;
-    if (!colors) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.colors = colors;
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const colors = req.body.colors;
+  if (!colors) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  profile.colors = colors;
+  await profile.save();
+
+  const result = await profile.update({ colors });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateType = async (req, res) => {
-  try {
-    const type = req.body.type;
-    if (!type) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.type = type;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const type = req.body.type;
+  if (!type) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ type });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateBrands = async (req, res) => {
-  try {
-    const brands = req.body.brands;
-    if (!brands) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.brands = brands;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const brands = req.body.brands;
+  if (!brands) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ brands });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateCelebrity = async (req, res) => {
-  try {
-    const celebrity = req.body.celebrity;
-    if (!celebrity) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.celebrity = celebrity;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const celebrity = req.body.celebrity;
+  if (!celebrity) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ celebrity });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updateSkin = async (req, res) => {
-  try {
-    const skin = req.body.skin;
-    if (!skin) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.skin = skin;
-    await profile.validate();
-    await profile.save();
-
-    return res.status(200).send(successMessages.PROFILE_UPDATED);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  const skin = req.body.skin;
+  if (!skin) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  profile.skin = skin;
+  await profile.validate();
+  await profile.save();
+
+  const result = await profile.update({ skin });
+  return res.status(result.status).send(result.msg);
 };
 
 exports.updatePicture = async (req, res) => {
-  try {
-    const picture = req.body.picture;
+  const picture = req.body.picture;
 
-    if (!picture) {
-      return res.status(400).send(errorMessages.MISSING_FIELD);
-    }
-
-    const profile = req.profile;
-
-    profile.pictures = picture;
-    await profile.validate();
-    await profile.save();
-
-    res.status(200).send(successMessages.PROFILE_UPDATED);
-
-    sendProfileCompleteMail(req.body.email);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).send(errorMessages.BAD_REQUEST);
-    }
-    console.error(error);
-    if (error instanceof DatabaseError) {
-      res.status(500).send(errorMessages.DATABASE_FAILURE);
-    } else {
-      res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+  if (!picture) {
+    return res.status(400).send(errorMessages.MISSING_FIELD);
   }
+
+  const profile = req.profile;
+
+  const result = await profile.update({ picture });
+  res.status(result.status).send(result.msg);
+
+  await sendProfileCompleteMail(req.body.email);
 };

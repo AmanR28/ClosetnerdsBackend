@@ -4,7 +4,7 @@ const getProfile = require('../middleware/getProfile');
 const getUser = require('../middleware/getUser');
 const profileController = require('../controllers/profile.controller');
 
-router.get('/', profileController.getProfile);
+router.get('/', getUser, getProfile, profileController.getProfile);
 
 router.post('/', profileController.createProfile);
 router.post('/measures', getUser, getProfile, profileController.updateMeasures);
