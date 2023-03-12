@@ -24,7 +24,7 @@ const sendVerificationToken = async user => {
   const token = generateToken(user.id, constants.TOKEN.TYPE_VALIDATE);
   console.log('Validity Token', token);
 
-  const uri = WEB_URI + 'validate/' + token;
+  const uri = WEB_URI + 'validate?token=' + token;
 
   await sendgridService.smProfileValidate(user.email, user.name, uri);
 };
