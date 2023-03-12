@@ -5,11 +5,8 @@ const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
 
-const sendProfileCompleteMail = async email => {
+const sendProfileCompleteMail = async (user, profile) => {
   try {
-    const user = req.user;
-    const profile = req.profile;
-
     delete profile.dataValues.id;
     delete profile.dataValues.userId;
     delete profile.dataValues.createdAt;
@@ -233,5 +230,5 @@ exports.updatePicture = async (req, res) => {
   const result = await profile.update({ picture });
   res.status(result.status).send(result.msg);
 
-  await sendProfileCompleteMail(req.body.email);
+  await sendProfileCompleteMail(req.user, req.profile);
 };

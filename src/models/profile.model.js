@@ -81,7 +81,7 @@ module.exports = sequelize => {
       skin: {
         type: Sequelize.TEXT,
       },
-      pictures: {
+      picture: {
         type: Sequelize.TEXT,
       },
     },

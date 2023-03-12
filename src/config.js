@@ -3,21 +3,24 @@ require('dotenv').config();
 ENV = process.env.NODE_ENV || 'local';
 
 let GC_CALLBACK, FB_CALLBACK;
-let BASE_URI;
+let BASE_URI, WEB_URI;
 
 if (ENV === 'production') {
   console.log('Running In Production');
   BASE_URI = 'https://closetnerds.in/api/';
+  WEB_URI = 'https://closetnerds.in/';
   GC_CALLBACK = 'https://closetnerds.in/api/auth/google/callback';
   FB_CALLBACK = 'https://closetnerds.in/api/auth/facebook/callback';
 } else if (ENV === 'development') {
   console.log('Running In Development');
-  BASE_URI = 'https://development.closetnerds.in/api';
+  BASE_URI = 'https://development.closetnerds.in/api/';
+  WEB_URI = 'https://development.closetnerds.in/api/';
   GC_CALLBACK = 'https://development.closetnerds.in/api/auth/google/callback';
   FB_CALLBACK = 'https://development.closetnerds.in/api/auth/facebook/callback';
 } else {
   console.log('Running In Local');
   BASE_URI = 'http://localhost:3000/';
+  WEB_URI = 'http://localhost:4000/';
   GC_CALLBACK = 'http://localhost:3000/auth/google/callback';
   FB_CALLBACK = 'http://localhost:3000/auth/facebook/callback';
 }
@@ -25,6 +28,7 @@ if (ENV === 'production') {
 module.exports = {
   ENV,
   BASE_URI,
+  WEB_URI,
   port: process.env.PORT,
   JWT_TOKEN: {
     SECRET_KEY: process.env.SECRET_KEY,

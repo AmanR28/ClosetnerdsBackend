@@ -4,7 +4,7 @@ const { ValidationError, DatabaseError } = require('sequelize');
 const { sequelize, User } = require('../db');
 const errorMessages = require('../commons/error_messages');
 const successMessages = require('../commons/success_messages');
-const { BASE_URI, JWT_TOKEN, sendgrid } = require('../config');
+const { BASE_URI, WEB_URI, JWT_TOKEN, sendgrid } = require('../config');
 const constants = require('../commons/constants');
 const success_messages = require('../commons/success_messages');
 const error_messages = require('../commons/error_messages');
@@ -24,7 +24,7 @@ const sendVerificationToken = async user => {
   const token = generateToken(user.id, constants.TOKEN.TYPE_VALIDATE);
   console.log('Validity Token', token);
 
-  const uri = BASE_URI + 'auth/validate?token=' + token;
+  const uri = WEB_URI + 'validate/' + token;
 
   await sendgridService.smProfileValidate(user.email, user.name, uri);
 };

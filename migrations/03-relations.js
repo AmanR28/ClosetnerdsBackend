@@ -16,7 +16,7 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeIndex('profiles', ['userId']);
     await queryInterface.removeConstraint('profiles', 'fk_profile_user');
+    await queryInterface.removeIndex('profiles', ['userId']);
   },
 };
