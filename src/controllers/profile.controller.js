@@ -149,14 +149,14 @@ exports.createProfile = async (req, res) => {
 };
 
 exports.updateMeasures = async (req, res) => {
-  const measures = {
-    bust: req.body.bust || 0,
-    waist: req.body.waist || 0,
-    hip: req.body.hip || 0,
-    length: req.body.length || 0,
-  };
-
   try {
+    const measures = {
+      bust: req.body.bust || 0,
+      waist: req.body.waist || 0,
+      hip: req.body.hip || 0,
+      length: req.body.length || 0,
+    };
+
     const profile = req.profile;
 
     profile.measures = measures;
@@ -205,7 +205,11 @@ exports.updateWears = async (req, res) => {
 
 exports.updateOccasions = async (req, res) => {
   try {
-    const occasions = req.body.occasions || {};
+    const occasions = req.body.occasions;
+    if (!occasions) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.occasions = occasions;
@@ -229,6 +233,10 @@ exports.updateOccasions = async (req, res) => {
 exports.updatePrices = async (req, res) => {
   try {
     const prices = req.body.prices;
+    if (!prices) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.prices = prices;
@@ -251,6 +259,10 @@ exports.updatePrices = async (req, res) => {
 exports.updateColors = async (req, res) => {
   try {
     const colors = req.body.colors;
+    if (!colors) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.colors = colors;
@@ -273,6 +285,10 @@ exports.updateColors = async (req, res) => {
 exports.updateType = async (req, res) => {
   try {
     const type = req.body.type;
+    if (!type) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.type = type;
@@ -295,7 +311,11 @@ exports.updateType = async (req, res) => {
 
 exports.updateBrands = async (req, res) => {
   try {
-    const brands = req.body.brands || '';
+    const brands = req.body.brands;
+    if (!brands) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.brands = brands;
@@ -318,7 +338,11 @@ exports.updateBrands = async (req, res) => {
 
 exports.updateCelebrity = async (req, res) => {
   try {
-    const celebrity = req.body.celebrity || '';
+    const celebrity = req.body.celebrity;
+    if (!celebrity) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.celebrity = celebrity;
@@ -341,7 +365,11 @@ exports.updateCelebrity = async (req, res) => {
 
 exports.updateSkin = async (req, res) => {
   try {
-    const skin = req.body.skin || '';
+    const skin = req.body.skin;
+    if (!skin) {
+      return res.status(400).send(errorMessages.MISSING_FIELD);
+    }
+
     const profile = req.profile;
 
     profile.skin = skin;
@@ -371,11 +399,6 @@ exports.updatePicture = async (req, res) => {
     }
 
     const profile = req.profile;
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
 
     profile.pictures = picture;
     await profile.validate();
