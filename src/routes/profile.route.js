@@ -1,22 +1,23 @@
 const router = require('express').Router();
 const upload = require('../middleware/upload');
-const getJwtUser = require('../middleware/getJwtUser');
+const getProfile = require('../middleware/getProfile');
+const getUser = require('../middleware/getUser');
 const profileController = require('../controllers/profile.controller');
 
-router.get('/', getJwtUser, profileController.getProfile);
+router.get('/', profileController.getProfile);
 
-router.post('/', getJwtUser, profileController.createProfile);
-router.post('/measures', getJwtUser, profileController.updateMeasures);
-router.post('/wears', getJwtUser, profileController.updateWears);
-router.post('/occasions', getJwtUser, profileController.updateOccasions);
+router.post('/', profileController.createProfile);
+router.post('/measures', getUser, getProfile, profileController.updateMeasures);
+router.post('/wears', getUser, getProfile, profileController.updateWears);
+router.post('/occasions', getUser, getProfile, profileController.updateOccasions);
 
-router.post('/prices', getJwtUser, profileController.updatePrices);
-router.post('/colors', getJwtUser, profileController.updateColors);
+router.post('/prices', getUser, getProfile, profileController.updatePrices);
+router.post('/colors', getUser, getProfile, profileController.updateColors);
 
-router.post('/type', getJwtUser, profileController.updateType);
-router.post('/brands', getJwtUser, profileController.updateBrands);
-router.post('/celebrity', getJwtUser, profileController.updateCelebrity);
-router.post('/skin', getJwtUser, profileController.updateSkin);
-router.post('/picture', getJwtUser, upload.profileImage, profileController.updatePicture);
+router.post('/type', getUser, getProfile, profileController.updateType);
+router.post('/brands', getUser, getProfile, profileController.updateBrands);
+router.post('/celebrity', getUser, getProfile, profileController.updateCelebrity);
+router.post('/skin', getUser, getProfile, profileController.updateSkin);
+router.post('/picture', upload.profileImage, profileController.updatePicture);
 
 module.exports = router;

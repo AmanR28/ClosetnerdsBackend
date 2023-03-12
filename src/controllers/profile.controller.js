@@ -1,5 +1,5 @@
 const { User, Profile } = require('../db');
-const { ValidationError, DatabaseError, col } = require('sequelize');
+const { ValidationError, DatabaseError } = require('sequelize');
 const sendgrid = require('../services/sendgrid.service');
 const pdfService = require('../services/pdf.service');
 const errorMessages = require('../commons/error_messages');
@@ -149,7 +149,6 @@ exports.createProfile = async (req, res) => {
 };
 
 exports.updateMeasures = async (req, res) => {
-  const email = req.body.email;
   const measures = {
     bust: req.body.bust || 0,
     waist: req.body.waist || 0,
@@ -157,27 +156,8 @@ exports.updateMeasures = async (req, res) => {
     length: req.body.length || 0,
   };
 
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
-
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const profile = req.profile;
 
     profile.measures = measures;
     await profile.validate();
@@ -198,30 +178,11 @@ exports.updateMeasures = async (req, res) => {
 };
 
 exports.updateWears = async (req, res) => {
-  const email = req.body.email;
-  const wears = req.body.wears || {};
-  const subs = req.body.subs || {};
-
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
+    const wears = req.body.wears || {};
+    const subs = req.body.subs || {};
 
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const profile = req.profile;
 
     profile.wears = wears;
     profile.subs = subs;
@@ -243,29 +204,9 @@ exports.updateWears = async (req, res) => {
 };
 
 exports.updateOccasions = async (req, res) => {
-  const email = req.body.email;
-  const occasions = req.body.occasions || {};
-
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const occasions = req.body.occasions || {};
+    const profile = req.profile;
 
     profile.occasions = occasions;
     await profile.validate();
@@ -286,29 +227,9 @@ exports.updateOccasions = async (req, res) => {
 };
 
 exports.updatePrices = async (req, res) => {
-  const email = req.body.email;
-  const prices = req.body.prices;
-
-  if (!email || !prices) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const prices = req.body.prices;
+    const profile = req.profile;
 
     profile.prices = prices;
     await profile.validate();
@@ -328,29 +249,9 @@ exports.updatePrices = async (req, res) => {
 };
 
 exports.updateColors = async (req, res) => {
-  const email = req.body.email;
-  const colors = req.body.colors;
-
-  if (!email || !colors) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const colors = req.body.colors;
+    const profile = req.profile;
 
     profile.colors = colors;
     await profile.save();
@@ -370,29 +271,9 @@ exports.updateColors = async (req, res) => {
 };
 
 exports.updateType = async (req, res) => {
-  const email = req.body.email;
-  const type = req.body.type;
-
-  if (!email || !type) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const type = req.body.type;
+    const profile = req.profile;
 
     profile.type = type;
     await profile.validate();
@@ -413,29 +294,9 @@ exports.updateType = async (req, res) => {
 };
 
 exports.updateBrands = async (req, res) => {
-  const email = req.body.email;
-  const brands = req.body.brands || '';
-
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const brands = req.body.brands || '';
+    const profile = req.profile;
 
     profile.brands = brands;
     await profile.validate();
@@ -456,29 +317,9 @@ exports.updateBrands = async (req, res) => {
 };
 
 exports.updateCelebrity = async (req, res) => {
-  const email = req.body.email;
-  const celebrity = req.body.celebrity || '';
-
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const celebrity = req.body.celebrity || '';
+    const profile = req.profile;
 
     profile.celebrity = celebrity;
     await profile.validate();
@@ -499,29 +340,9 @@ exports.updateCelebrity = async (req, res) => {
 };
 
 exports.updateSkin = async (req, res) => {
-  const email = req.body.email;
-  const skin = req.body.skin || '';
-
-  if (!email) {
-    return res.status(400).send(errorMessages.MISSING_FIELD);
-  }
   try {
-    const user = await User.findOne({ where: { email: email } });
-    if (!user) return res.status(404).send(errorMessages.NOT_FOUND);
-
-    if (user.isRegistered) {
-      const jwt_user = req.jwt_user;
-      if (!jwt_user || jwt_user.id != user.id) {
-        return res.status(401).send(errorMessages.UNAUTHORIZED);
-      }
-    }
-
-    const profile = await Profile.findByPk(user.profileId);
-
-    if (!profile) {
-      console.error('Profile Not Associated with user ', user.id);
-      return res.status(500).send(errorMessages.SYSTEM_FAILURE);
-    }
+    const skin = req.body.skin || '';
+    const profile = req.profile;
 
     profile.skin = skin;
     await profile.validate();

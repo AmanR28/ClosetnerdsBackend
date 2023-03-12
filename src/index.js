@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const profileRoute = require('./routes/profile.route');
 const authRoute = require('./routes/auth.route');
@@ -6,8 +7,8 @@ const { port } = require('./config');
 const passport = require('passport');
 const { sequelize, User, Profile } = require('./db');
 const hooks = require('./models/hooks');
+const currentUser = require('./middleware/currentUser');
 
-const cors = require('cors');
 app.use(cors({ origin: '*' }));
 
 sequelize
@@ -28,6 +29,8 @@ app.use(
 
 app.use(passport.initialize());
 require('./services/passport.service');
+
+app.use(currentUser);
 
 app.get('/', (req, res) => res.send('hi'));
 app.use('/profile', profileRoute);
