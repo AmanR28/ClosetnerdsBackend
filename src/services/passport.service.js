@@ -1,6 +1,5 @@
 const passport = require('passport');
 const passportJwt = require('passport-jwt');
-const passportLocal = require('passport-local');
 const GoogleStrategy = require('passport-google-oauth20');
 const FacebookStrategy = require('passport-facebook');
 const { User } = require('../db');
@@ -8,7 +7,6 @@ const { JWT_TOKEN, GOOGLE, FACEBOOK } = require('../config');
 const constants = require('../commons/constants');
 const errorMessages = require('../commons/error_messages');
 
-const LocalStrategy = passportLocal.Strategy;
 const JwtStrategy = passportJwt.Strategy;
 const ExtractJwt = passportJwt.ExtractJwt;
 
@@ -56,9 +54,7 @@ passport.use(
         id: profile.id,
         name: profile.displayName,
         email: profile.emails[0].value,
-        isRegistered: true,
       };
-      console.log(user);
       return cb(null, user);
     }
   )

@@ -314,10 +314,7 @@ module.exports = {
         });
 
       const token = generateToken(user.id);
-      return res.status(200).json({
-        ...successMessages.AUTH_SUCCESS,
-        token,
-      });
+      res.redirect(WEB_URI + 'auth/google?token=' + token);
     } catch (error) {
       console.error(error);
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -343,11 +340,7 @@ module.exports = {
       }
 
       const token = generateToken(user.id);
-
-      return res.status(200).json({
-        ...successMessages.AUTH_SUCCESS,
-        token,
-      });
+      res.redirect(WEB_URI + 'auth/facebook?token=' + token);
     } catch (error) {
       console.error(error);
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
