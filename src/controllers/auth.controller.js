@@ -314,7 +314,7 @@ module.exports = {
         });
 
       const token = generateToken(user.id);
-      res.redirect(WEB_URI + 'auth/google?token=' + token);
+      res.redirect(WEB_URI + 'auth/google?token=' + token + '&googleId=' + user.googleId);
     } catch (error) {
       console.error(error);
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
@@ -340,7 +340,7 @@ module.exports = {
       }
 
       const token = generateToken(user.id);
-      res.redirect(WEB_URI + 'auth/facebook?token=' + token);
+      res.redirect(WEB_URI + 'auth/facebook?token=' + token + '&facebookId=' + user.facebookId);
     } catch (error) {
       console.error(error);
       res.status(500).send(errorMessages.SYSTEM_FAILURE);
