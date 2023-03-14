@@ -5,8 +5,8 @@ const passport = require('passport');
 router.post('/login', authController.login);
 router.post('/signup', authController.signup);
 router.post('/validate', authController.validate);
-// router.get('/reset', authController.recoverPassword);
-// router.post('/reset', authController.resetPassword);
+router.get('/reset', authController.recoverPassword);
+router.post('/reset', authController.resetPassword);
 
 router.get(
   '/google',
